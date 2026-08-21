@@ -1,1 +1,1 @@
-# Modulo de usuarios do Sorroche Financas
+# Módulo de usuários do Sorroche Finanças
