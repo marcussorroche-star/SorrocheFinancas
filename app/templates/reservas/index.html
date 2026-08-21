@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="container-fluid py-4">
+
+```
+<div class="mb-4">
+    <h2 class="fw-bold">🛡️ Reservas Financeiras</h2>
+    <p class="text-muted mb-0">
+        Organize sua sobra financeira entre reserva de despesas e reserva financeira.
+    </p>
+</div>
+
+<div class="row g-4">
+
+    <!-- RESERVA DE DESPESAS -->
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+                        <h4 class="fw-bold mb-1">
+                            📉 Reserva de Despesas
+                        </h4>
+
+                        <p class="text-muted mb-0">
+                            Proteção para despesas inesperadas.
+                        </p>
+                    </div>
+
+                    <div class="fs-1">
+                        🛡️
+                    </div>
+
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+
+                    <div class="text-muted small">
+                        Valor reservado
+                    </div>
+
+                    <div class="fs-3 fw-bold text-primary">
+                        R$
+                        {{ "%.2f"|format(
+                            reserva_despesas.valor_reservado
+                            if reserva_despesas else 0
+                        )|replace(".",",") }}
+                    </div>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <div class="text-muted small">
+                        Valor utilizado
+                    </div>
+
+                    <div class="fs-5 fw-bold text-danger">
+                        R$
+                        {{ "%.2f"|format(
+                            reserva_despesas.valor_utilizado
+                            if reserva_despesas else 0
+                        )|replace(".",",") }}
+                    </div>
+
+                </div>
+
+                <div class="mb-4">
+
+                    <div class="text-muted small">
+                        Valor disponível
+                    </div>
+
+                    <div class="fs-4 fw-bold text-success">
+                        R$
+                        {{ "%.2f"|format(
+                            reserva_despesas.valor_disponivel
+                            if reserva_despesas else 0
+                        )|replace(".",",") }}
+                    </div>
+
+                </div>
+
+                <form
+                    method="POST"
+                    action="{{ url_for('reservas.salvar') }}"
+                >
+
+                    <input
+                        type="hidden"
+                        name="tipo"
+                        value="despesas"
+                    >
+
+                    <label class="form-label fw-bold">
+                        Definir valor da reserva
+                    </label>
+
+                    <div class="input-group mb-3">
+
+                        <span class="input-group-text">
+                            R$
+                        </span>
+
+                        <input
+                            type="number"
+                            name="valor_reservado"
+                            class="form-control"
+                            step="0.01"
+                            min="0"
+                            value="{{
+                                reserva_despesas.valor_reservado
+                                if reserva_despesas else 0
+                            }}"
+                            required
+                        >
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100"
+                    >
+                        💾 Salvar reserva de despesas
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- RESERVA FINANCEIRA -->
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+                        <h4 class="fw-bold mb-1">
+                            💰 Reserva Financeira
+                        </h4>
+
+                        <p class="text-muted mb-0">
+                            Dinheiro guardado para segurança e futuro.
+                        </p>
+                    </div>
+
+                    <div class="fs-1">
+                        💰
+                    </div>
+
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+
+                    <div class="text-muted small">
+                        Valor reservado
+                    </div>
+
+                    <div class="fs-3 fw-bold text-primary">
+                        R$
+                        {{ "%.2f"|format(
+                            reserva_financeira.valor_reservado
+                            if reserva_financeira else 0
+                        )|replace(".",",") }}
+                    </div>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <div class="text-muted small">
+                        Valor utilizado
+                    </div>
+
+                    <div class="fs-5 fw-bold text-danger">
+                        R$
+                        {{ "%.2f"|format(
+                            reserva_financeira.valor_utilizado
+                            if reserva_financeira else 0
+                        )|replace(".",",") }}
+                    </div>
+
+                </div>
+
+                <div class="mb-4">
+
+                    <div class="text-muted small">
+                        Valor disponível
+                    </div>
+
+                    <div class="fs-4 fw-bold text-success">
+                        R$
+                        {{ "%.2f"|format(
+                            reserva_financeira.valor_disponivel
+                            if reserva_financeira else 0
+                        )|replace(".",",") }}
+                    </div>
+
+                </div>
+
+                <form
+                    method="POST"
+                    action="{{ url_for('reservas.salvar') }}"
+                >
+
+                    <input
+                        type="hidden"
+                        name="tipo"
+                        value="financeira"
+                    >
+
+                    <label class="form-label fw-bold">
+                        Definir valor da reserva
+                    </label>
+
+                    <div class="input-group mb-3">
+
+                        <span class="input-group-text">
+                            R$
+                        </span>
+
+                        <input
+                            type="number"
+                            name="valor_reservado"
+                            class="form-control"
+                            step="0.01"
+                            min="0"
+                            value="{{
+                                reserva_financeira.valor_reservado
+                                if reserva_financeira else 0
+                            }}"
+                            required
+                        >
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn btn-success w-100"
+                    >
+                        💾 Salvar reserva financeira
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- INFORMAÇÃO -->
+
+<div class="card border-0 shadow-sm mt-4">
+
+    <div class="card-body p-4">
+
+        <h5 class="fw-bold">
+            🤖 Como a IA vai ajudar
+        </h5>
+
+        <p class="text-muted mb-0">
+            Quando houver sobra financeira, a IA poderá analisar
+            receitas, despesas, saldo e os valores das duas reservas
+            para indicar qual reserva deve ser priorizada.
+        </p>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+{% endblock %}

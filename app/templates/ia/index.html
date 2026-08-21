@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Financeira</title>
+
+```
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f8;
+        margin: 0;
+        padding: 30px;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        margin-top: 0;
+    }
+
+    textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        resize: vertical;
+        font-size: 16px;
+    }
+
+    button {
+        margin-top: 12px;
+        padding: 12px 22px;
+        border: 0;
+        border-radius: 8px;
+        background: #2563eb;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #1d4ed8;
+    }
+
+    .resposta {
+        margin-top: 20px;
+        padding: 15px;
+        background: #eef6ff;
+        border-radius: 8px;
+    }
+</style>
+```
+
+</head>
+
+<body>
+
+<div class="container">
+
+```
+<div class="card">
+    <h1>🤖 IA Financeira</h1>
+
+    <p>
+        Faça uma pergunta sobre suas finanças.
+    </p>
+
+    <form method="POST">
+
+        <textarea
+            name="pergunta"
+            placeholder="Exemplo: Como posso controlar melhor minhas despesas?"
+            required
+        ></textarea>
+
+        <br>
+
+        <button type="submit">
+            Analisar pergunta
+        </button>
+
+    </form>
+</div>
+
+{% if resposta %}
+<div class="card resposta">
+    <h2>Resposta da IA</h2>
+
+    <p>{{ resposta }}</p>
+</div>
+{% endif %}
+```
+
+</div>
+
+</body>
+</html>
+

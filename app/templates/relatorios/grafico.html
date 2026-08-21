@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<h1 class="mb-4">📊 Gráfico de Despesas</h1>
+
+
+<div class="card shadow p-4">
+
+<canvas id="grafico"></canvas>
+
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+
+const categorias = {{ nomes|tojson }};
+
+const valores = {{ valores|tojson }};
+
+
+
+new Chart(
+    document.getElementById('grafico'),
+    {
+        type: 'pie',
+
+        data: {
+
+            labels: categorias,
+
+            datasets: [
+                {
+                    label: 'Despesas',
+                    data: valores
+                }
+            ]
+
+        }
+    }
+);
+
+
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Leitor de compras</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        input[type="file"] {
+            display: block;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .sucesso {
+            margin-top: 25px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+        }
+
+        .erro {
+            margin-top: 25px;
+            padding: 15px;
+            background: #ffebee;
+            color: #b71c1c;
+            border-radius: 8px;
+        }
+
+        .resultado {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .compra {
+            margin-top: 25px;
+            padding: 20px;
+            background: #eef6ff;
+            border-radius: 10px;
+        }
+
+        .produto {
+            margin-top: 12px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .categoria {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f8f8;
+            border-radius: 12px;
+        }
+
+        .categoria h3 {
+            margin-top: 0;
+        }
+
+        .subcategoria {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .preco {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .sem-produtos {
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff8e1;
+            border-radius: 8px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Leitor de compras</h1>
+
+    <p>
+        Tire uma foto ou selecione uma imagem da sua compra.
+    </p>
+
+    <form method="POST" enctype="multipart/form-data">
+
+        <input
+            type="file"
+            name="imagem"
+            accept="image/*"
+            capture="environment"
+            required
+        >
+
+        <button type="submit">
+            Analisar compra
+        </button>
+
+    </form>
+
+    {% if imagem_recebida %}
+        <div class="sucesso">
+            <strong>Imagem recebida com sucesso.</strong>
+        </div>
+    {% endif %}
+
+    {% if erro %}
+        <div class="erro">
+            <strong>Erro:</strong>
+            <p>{{ erro }}</p>
+        </div>
+    {% endif %}
+
+
+    {% if compra %}
+
+        <div class="compra">
+
+            <h2>Dados da compra</h2>
+
+            {% if compra.estabelecimento %}
+                <p>
+                    <strong>Estabelecimento:</strong>
+                    {{ compra.estabelecimento }}
+                </p>
+            {% endif %}
+
+            {% if compra.cnpj %}
+                <p>
+                    <strong>CNPJ:</strong>
+                    {{ compra.cnpj }}
+                </p>
+            {% endif %}
+
+            {% if compra.data %}
+                <p>
+                    <strong>Data:</strong>
+                    {{ compra.data }}
+                </p>
+            {% endif %}
+
+            {% if compra.horario %}
+                <p>
+                    <strong>Horário:</strong>
+                    {{ compra.horario }}
+                </p>
+            {% endif %}
+
+            {% if compra.subtotal is not none %}
+                <p>
+                    <strong>Subtotal:</strong>
+                    R$ {{ "%.2f"|format(compra.subtotal)|replace(".", ",") }}
+                </p>
+            {% endif %}
+
+            {% if compra.desconto is not none %}
+                <p>
+                    <strong>Desconto:</strong>
+                    R$ {{ "%.2f"|format(compra.desconto)|replace(".", ",") }}
+                </p>
+            {% endif %}
+
+            {% if compra.total is not none %}
+                <p>
+                    <strong>Total:</strong>
+                    R$ {{ "%.2f"|format(compra.total)|replace(".", ",") }}
+                </p>
+            {% endif %}
+
+            {% if compra.pagamento %}
+                <p>
+                    <strong>Pagamento:</strong>
+                    {{ compra.pagamento }}
+                </p>
+            {% endif %}
+
+            {% if compra.cartao_final %}
+                <p>
+                    <strong>Cartão:</strong>
+                    final {{ compra.cartao_final }}
+                </p>
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+
+    {% if produtos %}
+
+        <div class="resultado">
+
+            <h2>Produtos encontrados</h2>
+
+            {% set categorias = {} %}
+
+            {% for produto in produtos %}
+
+                {% set categoria = produto.categoria or "outros" %}
+
+                {% if categoria not in categorias %}
+                    {% set _ = categorias.update({categoria: []}) %}
+                {% endif %}
+
+                {% set _ = categorias[categoria].append(produto) %}
+
+            {% endfor %}
+
+
+            {% for categoria, lista in categorias.items() %}
+
+                <div class="categoria">
+
+                    <h3>
+                        📁 {{ categoria|replace("_", " ")|title }}
+                    </h3>
+
+                    {% for produto in lista %}
+
+                        <div class="produto">
+
+                            <strong>
+                                {{ produto.produto }}
+                            </strong>
+
+                            {% if produto.subcategoria %}
+                                <div class="subcategoria">
+                                    📂
+                                    {{ produto.subcategoria|replace("_", " ")|title }}
+                                </div>
+                            {% endif %}
+
+                            <div class="preco">
+                                R$
+                                {{ "%.2f"|format(produto.preco)|replace(".", ",") }}
+                            </div>
+
+                            {% if produto.quantidade %}
+                                <div>
+                                    Quantidade:
+                                    {{ produto.quantidade }}
+                                </div>
+                            {% endif %}
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% elif texto_ocr %}
+
+        <div class="sem-produtos">
+            <strong>
+                A compra foi lida, mas nenhum produto com preço
+                foi identificado.
+            </strong>
+        </div>
+
+    {% endif %}
+
+
+    {% if texto_ocr %}
+
+        <div class="resultado">
+
+            <h2>Texto encontrado na compra</h2>
+
+            <pre>{{ texto_ocr }}</pre>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>

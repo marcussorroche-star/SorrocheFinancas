@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Sorroche Finanças</h2>
+            <p class="text-muted mb-0">
+                Controle financeiro
+            </p>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         RESUMO
+    ====================================================== -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Receitas
+                    </h6>
+
+                    <h3>
+                        R$
+                        {{ "%.2f"|format(total_receitas or 0) }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Despesas
+                    </h6>
+
+                    <h3>
+                        R$
+                        {{ "%.2f"|format(total_despesas or 0) }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Saldo
+                    </h6>
+
+                    <h3>
+                        R$
+                        {{ "%.2f"|format(saldo or 0) }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         PRÓXIMO MÊS
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body">
+
+            <h5>
+                📅 Despesas do próximo mês
+            </h5>
+
+            <h3>
+                R$
+                {{ "%.2f"|format(despesas_proximo_mes or 0) }}
+            </h3>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         RELATÓRIOS
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body">
+
+            <h5 class="mb-3">
+                📊 Relatórios
+            </h5>
+
+            <div class="d-flex flex-wrap gap-2">
+
+                <a
+                    href="{{ url_for('financeiro.relatorio_mensal') }}"
+                    class="btn btn-primary"
+                >
+                    📅 Relatório Mensal
+                </a>
+
+                <a
+                    href="{{ url_for('financeiro.relatorio_anual') }}"
+                    class="btn btn-success"
+                >
+                    📆 Relatório Anual
+                </a>
+
+                <a
+                    href="{{ url_for('financeiro.relatorio_categorias') }}"
+                    class="btn btn-warning"
+                >
+                    📂 Gastos por Categoria
+                </a>
+
+                <a
+                    href="{{ url_for('financeiro.relatorio_grafico') }}"
+                    class="btn btn-info"
+                >
+                    🥧 Gráfico de Gastos
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         GRÁFICO DE GASTOS
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body">
+
+            <h4 class="mb-4">
+                🥧 Gastos por Categoria
+            </h4>
+
+            <div
+                style="
+                    position: relative;
+                    width: 100%;
+                    height: 450px;
+                "
+            >
+
+                <canvas id="graficoGastos"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     CHART.JS
+========================================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const canvas =
+            document.getElementById(
+                "graficoGastos"
+            );
+
+        if (!canvas) {
+            return;
+        }
+
+        const categorias =
+            {{ categorias | default([]) | tojson }};
+
+        const valores =
+            {{ valores | default([]) | tojson }};
+
+
+        new Chart(
+            canvas,
+            {
+                type: "pie",
+
+                data: {
+
+                    labels: categorias,
+
+                    datasets: [
+                        {
+                            data: valores,
+
+                            borderWidth: 2
+                        }
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            position: "right"
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label:
+                                    function(context) {
+
+                                        const valor =
+                                            context.raw || 0;
+
+                                        return (
+                                            context.label
+                                            + ": R$ "
+                                            + Number(valor)
+                                                .toFixed(2)
+                                        );
+
+                                    }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+);
+
+</script>
+
+{% endblock %}

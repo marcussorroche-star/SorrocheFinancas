@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="container">
+
+```
+<h2 style="color: purple;">
+    💜 Juros e Custos Financeiros
+</h2>
+
+<hr>
+
+<form method="POST" action="/juros/nova">
+
+    <div class="mb-3">
+        <label>Descrição</label>
+
+        <input type="text"
+               name="descricao"
+               class="form-control"
+               placeholder="Ex: Juros cartão, cheque especial"
+               required>
+    </div>
+
+    <div class="mb-3">
+        <label>Categoria</label>
+
+        <select name="categoria" class="form-control">
+            <option>Juros Cartão</option>
+            <option>Cheque Especial</option>
+            <option>Empréstimo</option>
+            <option>Multa Boleto</option>
+            <option>Taxa Bancária</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Valor</label>
+
+        <input type="number"
+               step="0.01"
+               name="valor"
+               class="form-control"
+               required>
+    </div>
+
+    <button class="btn btn-primary">
+        💾 Salvar Juros
+    </button>
+
+</form>
+
+<hr>
+
+<h3>📊 Gráfico de Juros</h3>
+
+<div class="card shadow p-4 mb-4">
+    <div style="max-width: 500px; margin: auto;">
+        <canvas id="graficoJuros"></canvas>
+    </div>
+</div>
+
+<hr>
+
+<h3>
+    📋 Histórico de Juros
+</h3>
+
+<table class="table">
+
+    <thead class="table-dark">
+
+        <tr>
+            <th>Descrição</th>
+            <th>Categoria</th>
+            <th>Valor</th>
+            <th>Ação</th>
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+        {% for item in juros %}
+
+        <tr>
+
+            <td>{{ item.descricao }}</td>
+
+            <td>{{ item.categoria }}</td>
+
+            <td>
+                R$ {{ "%.2f"|format(item.valor or 0) }}
+            </td>
+
+            <td>
+
+                <a href="{{ url_for('juros.excluir', id=item.id) }}"
+                   class="btn btn-danger btn-sm">
+                    Excluir
+                </a>
+
+            </td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+
+            <td colspan="4">
+                Nenhum juros cadastrado.
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+```
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const labelsJuros = [
+    {% for item in juros %}
+        {{ item.categoria|tojson }},
+    {% endfor %}
+];
+
+const valoresJuros = [
+    {% for item in juros %}
+        {{ (item.valor or 0)|float }},
+    {% endfor %}
+];
+
+new Chart(document.getElementById("graficoJuros"), {
+    type: "pie",
+    data: {
+        labels: labelsJuros,
+        datasets: [{
+            data: valoresJuros
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: "bottom"
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<h1 class="mb-4">📊 Relatório Anual</h1>
+
+<div class="card shadow p-4 mb-4">
+
+```
+<form method="GET">
+
+    <label class="form-label">
+        Escolha o ano:
+    </label>
+
+    <input
+        type="number"
+        name="ano"
+        class="form-control mb-3"
+        value="{{ ano }}"
+        min="2000"
+        max="2100"
+    >
+
+    <button class="btn btn-primary">
+        🔎 Filtrar
+    </button>
+
+</form>
+```
+
+</div>
+
+<div class="row mt-4">
+
+```
+<div class="col-md-4 mb-3">
+    <div class="card bg-success text-white shadow p-4">
+        <h5>Receitas</h5>
+        <h3>
+            R$ {{ "%.2f"|format(total_receitas)|replace(".", ",") }}
+        </h3>
+    </div>
+</div>
+
+<div class="col-md-4 mb-3">
+    <div class="card bg-danger text-white shadow p-4">
+        <h5>Despesas</h5>
+        <h3>
+            R$ {{ "%.2f"|format(total_despesas)|replace(".", ",") }}
+        </h3>
+    </div>
+</div>
+
+<div class="col-md-4 mb-3">
+    <div class="card bg-primary text-white shadow p-4">
+        <h5>Saldo</h5>
+        <h3>
+            R$ {{ "%.2f"|format(saldo)|replace(".", ",") }}
+        </h3>
+    </div>
+</div>
+```
+
+</div>
+
+<div class="card shadow p-4 mt-4">
+
+```
+<h4 class="mb-4">
+    🥧 Onde foi gasto o dinheiro em {{ ano }}
+</h4>
+
+{% if categorias and valores %}
+
+<div style="max-width: 550px; margin: auto;">
+    <canvas id="graficoAnual"></canvas>
+</div>
+
+{% else %}
+
+<div class="alert alert-info">
+    Nenhuma despesa encontrada neste ano.
+</div>
+
+{% endif %}
+```
+
+</div>
+
+<div class="mt-4">
+
+```
+<a
+    href="{{ url_for('financeiro.relatorio_mensal') }}"
+    class="btn btn-primary me-2"
+>
+    📅 Relatório Mensal
+</a>
+
+<a
+    href="{{ url_for('financeiro.index') }}"
+    class="btn btn-secondary"
+>
+    ⬅️ Voltar
+</a>
+```
+
+</div>
+
+{% if categorias and valores %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const categoriasAnual = {{ categorias|tojson }};
+const valoresAnual = {{ valores|tojson }};
+
+new Chart(
+    document.getElementById("graficoAnual"),
+    {
+        type: "pie",
+
+        data: {
+            labels: categoriasAnual,
+
+            datasets: [{
+                data: valoresAnual
+            }]
+        },
+
+        options: {
+            responsive: true,
+
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    }
+);
+</script>
+
+{% endif %}
+
+{% endblock %}

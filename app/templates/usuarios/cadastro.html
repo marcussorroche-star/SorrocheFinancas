@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="container mt-5" style="max-width:600px;">
+
+<h2>Cadastro</h2>
+
+<form method="POST">
+
+<div class="mb-3">
+<label>Nome</label>
+<input
+name="nome"
+class="form-control"
+required>
+</div>
+
+<div class="mb-3">
+<label>E-mail</label>
+<input
+type="email"
+name="email"
+class="form-control"
+required>
+</div>
+
+<div class="mb-3">
+<label>Senha</label>
+<input
+type="password"
+name="senha"
+class="form-control"
+required>
+</div>
+
+<button class="btn btn-success w-100">
+Cadastrar
+</button>
+
+</form>
+
+</div>
+
+{% endblock %}

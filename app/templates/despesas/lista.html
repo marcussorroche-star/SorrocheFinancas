@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+```
+<h3>Despesas</h3>
+
+<a
+    href="{{ url_for('despesas.nova') }}"
+    class="btn btn-primary"
+>
+    ➕ Cadastrar Despesa
+</a>
+```
+
+</div>
+
+<div class="row mb-4">
+
+```
+<div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h6 class="text-muted">Total de despesas</h6>
+            <h3>
+                R$
+                {{ "%.2f"|format(despesas|sum(attribute="valor"))|replace(".", ",") }}
+            </h3>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h6 class="text-muted">Quantidade</h6>
+            <h3>{{ despesas|length }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h6 class="text-muted">Controle</h6>
+            <h3>Despesas</h3>
+        </div>
+    </div>
+</div>
+```
+
+</div>
+
+<!-- GRÁFICO -->
+
+<div class="card shadow-sm mb-4">
+
+```
+<div class="card-body">
+
+    <h5 class="card-title mb-4">
+        Gráfico de despesas por categoria
+    </h5>
+
+    {% if despesas %}
+
+    <div style="height: 400px; position: relative;">
+        <canvas id="graficoDespesas"></canvas>
+    </div>
+
+    {% else %}
+
+    <div class="text-center text-muted py-5">
+
+        <h5>Nenhuma despesa cadastrada</h5>
+
+        <p class="mb-0">
+            Cadastre uma despesa para gerar o gráfico.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+```
+
+</div>
+
+<!-- LISTA DE DESPESAS -->
+
+<div class="card shadow-sm">
+
+```
+<div class="card-body">
+
+    <h5 class="card-title mb-4">
+        Lista de despesas
+    </h5>
+
+    <div class="table-responsive">
+
+        <table class="table table-hover align-middle">
+
+            <thead>
+
+                <tr>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Valor</th>
+                    <th>Forma de pagamento</th>
+                    <th>Vencimento</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for despesa in despesas %}
+
+                <tr>
+
+                    <td>
+                        {{ despesa.descricao }}
+                    </td>
+
+                    <td>
+                        {{ despesa.categoria or "Sem categoria" }}
+                    </td>
+
+                    <td>
+                        R$
+                        {{ "%.2f"|format(despesa.valor)|replace(".", ",") }}
+                    </td>
+
+                    <td>
+                        {{ despesa.forma_pagamento or "-" }}
+                    </td>
+
+                    <td>
+
+                        {% if despesa.vencimento %}
+
+                            {{ despesa.vencimento.strftime("%d/%m/%Y") }}
+
+                        {% else %}
+
+                            -
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {% if despesa.status == "Pago" %}
+
+                            <span class="badge bg-success">
+                                Pago
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-warning text-dark">
+                                {{ despesa.status }}
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('despesas.excluir', id=despesa.id) }}"
+                            style="display:inline;"
+                            onsubmit="return confirm('Deseja excluir esta despesa?');"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn btn-sm btn-outline-danger"
+                            >
+                                Excluir
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="7" class="text-center py-5">
+
+                        <h5>Nenhuma despesa cadastrada</h5>
+
+                        <p class="text-muted mb-0">
+                            Quando você cadastrar uma despesa,
+                            ela aparecerá aqui.
+                        </p>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<!-- CHART.JS -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const canvas = document.getElementById("graficoDespesas");
+
+    if (!canvas) {
+        return;
+    }
+
+    const despesas = [
+
+        {% for despesa in despesas %}
+
+        {
+            categoria: {{ (despesa.categoria or "Sem categoria")|tojson }},
+            valor: {{ despesa.valor or 0 }}
+        }
+
+        {% if not loop.last %},{% endif %}
+
+        {% endfor %}
+
+    ];
+
+    const totais = {};
+
+    despesas.forEach(function (despesa) {
+
+        if (!totais[despesa.categoria]) {
+            totais[despesa.categoria] = 0;
+        }
+
+        totais[despesa.categoria] += Number(despesa.valor) || 0;
+
+    });
+
+    const nomes = Object.keys(totais);
+    const valores = Object.values(totais);
+
+    new Chart(canvas, {
+
+        type: "pie",
+
+        data: {
+
+            labels: nomes,
+
+            datasets: [
+                {
+                    data: valores
+                }
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    position: "bottom"
+                },
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function (context) {
+
+                            const valor =
+                                Number(context.raw || 0);
+
+                            return " R$ " +
+                                valor
+                                .toFixed(2)
+                                .replace(".", ",");
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

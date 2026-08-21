@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<!-- CABEÇALHO -->
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+```
+<div>
+
+    <h3>
+        Itens da compra
+    </h3>
+
+    <p class="text-muted mb-0">
+
+        {{ despesa.descricao }}
+
+        — Despesa:
+        <strong>
+            R$ {{ "%.2f"|format(despesa.valor)|replace(".", ",") }}
+        </strong>
+
+    </p>
+
+</div>
+
+<a
+    href="{{ url_for('despesas.index') }}"
+    class="btn btn-outline-secondary"
+>
+    Voltar para despesas
+</a>
+```
+
+</div>
+
+<!-- RESUMO -->
+
+<div class="row mb-4">
+
+```
+<div class="col-md-4 mb-3">
+
+    <div class="card shadow-sm h-100">
+
+        <div class="card-body">
+
+            <h6 class="text-muted">
+                Valor da despesa
+            </h6>
+
+            <h3>
+                R$
+                {{ "%.2f"|format(despesa.valor)|replace(".", ",") }}
+            </h3>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="col-md-4 mb-3">
+
+    <div class="card shadow-sm h-100">
+
+        <div class="card-body">
+
+            <h6 class="text-muted">
+                Total dos itens
+            </h6>
+
+            <h3>
+                R$
+                {{ "%.2f"|format(total_itens)|replace(".", ",") }}
+            </h3>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="col-md-4 mb-3">
+
+    <div class="card shadow-sm h-100">
+
+        <div class="card-body">
+
+            <h6 class="text-muted">
+                Diferença
+            </h6>
+
+            <h3>
+                R$
+                {{ "%.2f"|format(diferenca)|replace(".", ",") }}
+            </h3>
+
+        </div>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<!-- CADASTRAR ITEM -->
+
+<div class="card shadow-sm mb-4">
+
+```
+<div class="card-body">
+
+    <h5 class="card-title mb-4">
+        Adicionar item
+    </h5>
+
+    <form
+        method="POST"
+        action="{{ url_for('itens.novo', despesa_id=despesa.id) }}"
+    >
+
+        <div class="row">
+
+            <div class="col-md-4 mb-3">
+
+                <label class="form-label">
+                    Produto / Item
+                </label>
+
+                <input
+                    type="text"
+                    name="descricao"
+                    class="form-control"
+                    placeholder="Ex.: Arroz"
+                    required
+                >
+
+            </div>
+
+
+            <div class="col-md-2 mb-3">
+
+                <label class="form-label">
+                    Quantidade
+                </label>
+
+                <input
+                    type="number"
+                    name="quantidade"
+                    class="form-control"
+                    value="1"
+                    min="0.01"
+                    step="0.01"
+                    required
+                >
+
+            </div>
+
+
+            <div class="col-md-2 mb-3">
+
+                <label class="form-label">
+                    Valor unitário
+                </label>
+
+                <div class="input-group">
+
+                    <span class="input-group-text">
+                        R$
+                    </span>
+
+                    <input
+                        type="number"
+                        name="valor_unitario"
+                        class="form-control"
+                        value="0"
+                        min="0"
+                        step="0.01"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-2 mb-3">
+
+                <label class="form-label">
+                    Pasta
+                </label>
+
+                <select
+                    name="pasta_id"
+                    class="form-select"
+                >
+
+                    <option value="">
+                        Sem pasta
+                    </option>
+
+                    {% for pasta in pastas %}
+
+                    <option value="{{ pasta.id }}">
+                        {{ pasta.nome }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="col-md-2 mb-3 d-flex align-items-end">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary w-100"
+                >
+                    Adicionar
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+```
+
+</div>
+
+<!-- ITENS -->
+
+<div class="card shadow-sm">
+
+```
+<div class="card-body">
+
+    <h5 class="card-title mb-4">
+        Produtos da compra
+    </h5>
+
+
+    {% if itens %}
+
+    <div class="table-responsive">
+
+        <table class="table table-hover align-middle">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Item
+                    </th>
+
+                    <th>
+                        Pasta
+                    </th>
+
+                    <th>
+                        Quantidade
+                    </th>
+
+                    <th>
+                        Valor unitário
+                    </th>
+
+                    <th>
+                        Total
+                    </th>
+
+                    <th>
+                        Ação
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for item in itens %}
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            {{ item.descricao }}
+                        </strong>
+                    </td>
+
+
+                    <td>
+
+                        {% if item.pasta_id %}
+
+                            {% for pasta in pastas %}
+
+                                {% if pasta.id == item.pasta_id %}
+
+                                    {{ pasta.nome }}
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                        {% else %}
+
+                            <span class="text-muted">
+                                Sem pasta
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+                        {{ item.quantidade }}
+                    </td>
+
+
+                    <td>
+
+                        R$
+                        {{ "%.2f"|format(item.valor_unitario)|replace(".", ",") }}
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+
+                            R$
+                            {{ "%.2f"|format(item.valor_total)|replace(".", ",") }}
+
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        <a
+                            href="{{ url_for('itens.excluir', item_id=item.id) }}"
+                            class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Deseja excluir este item?');"
+                        >
+                            Excluir
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- TOTAL -->
+
+    <div class="row justify-content-end mt-4">
+
+        <div class="col-md-5">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <span>
+                            Valor da despesa
+                        </span>
+
+                        <strong>
+                            R$
+                            {{ "%.2f"|format(despesa.valor)|replace(".", ",") }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="d-flex justify-content-between mt-2">
+
+                        <span>
+                            Total dos itens
+                        </span>
+
+                        <strong>
+                            R$
+                            {{ "%.2f"|format(total_itens)|replace(".", ",") }}
+                        </strong>
+
+                    </div>
+
+
+                    <hr>
+
+
+                    <div class="d-flex justify-content-between">
+
+                        <strong>
+                            Diferença
+                        </strong>
+
+                        <strong>
+                            R$
+                            {{ "%.2f"|format(diferenca)|replace(".", ",") }}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {% else %}
+
+    <div class="text-center text-muted py-5">
+
+        <h5>
+            Nenhum item cadastrado
+        </h5>
+
+        <p class="mb-0">
+            Adicione os produtos que fazem parte desta compra.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+```
+
+</div>
+
+{% endblock %}

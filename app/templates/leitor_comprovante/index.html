@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<h1 class="mb-4">
+📷 Leitor de Comprovante
+</h1>
+
+
+<div class="card shadow p-4">
+
+
+<form method="POST" enctype="multipart/form-data">
+
+
+<label class="form-label">
+Tire uma foto do comprovante:
+</label>
+
+
+<input
+type="file"
+name="foto"
+accept="image/*"
+capture="environment"
+class="form-control mb-3"
+required
+>
+
+
+<button class="btn btn-primary w-100">
+
+🔎 Ler Comprovante
+
+</button>
+
+
+</form>
+
+
+
+{% if resultado %}
+
+
+<hr>
+
+
+<div class="alert alert-success">
+
+{{ resultado.mensagem }}
+
+</div>
+
+
+
+{% if resultado.dados %}
+
+
+<div class="card p-3">
+
+
+<h3>
+📋 Dados encontrados
+</h3>
+
+
+<p>
+🏪 <strong>Estabelecimento:</strong><br>
+{{ resultado.dados.estabelecimento }}
+</p>
+
+
+<p>
+💰 <strong>Valor:</strong><br>
+R$ {{ resultado.dados.valor }}
+</p>
+
+
+<p>
+💳 <strong>Pagamento:</strong><br>
+{{ resultado.dados.pagamento }}
+</p>
+
+
+<p>
+📅 <strong>Data:</strong><br>
+{{ resultado.dados.data }}
+</p>
+
+
+
+<form method="POST" action="{{ url_for('leitor_comprovante.salvar_despesa') }}">
+
+
+<input type="hidden"
+name="estabelecimento"
+value="{{ resultado.dados.estabelecimento }}">
+
+
+<input type="hidden"
+name="valor"
+value="{{ resultado.dados.valor }}">
+
+
+<input type="hidden"
+name="pagamento"
+value="{{ resultado.dados.pagamento }}">
+
+
+<input type="hidden"
+name="data"
+value="{{ resultado.dados.data }}">
+
+
+
+<button class="btn btn-success w-100">
+
+💾 Salvar como despesa
+
+</button>
+
+
+</form>
+
+
+</div>
+
+
+{% endif %}
+
+
+
+<hr>
+
+
+<h4>
+📄 Texto original lido:
+</h4>
+
+
+<pre class="bg-light p-3">
+
+{{ resultado.texto }}
+
+</pre>
+
+
+{% endif %}
+
+
+</div>
+
+
+{% endblock %}

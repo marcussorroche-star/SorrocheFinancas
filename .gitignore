@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+instance/
+.env
+
+# Banco local
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups
+*.bak
+*.backup
+*.backup_*
+
+# Uploads locais
+uploads/
+
+# Executáveis locais
+cloudflared.exe
+
+# Arquivos temporários
+CAMINHO_DO_ARQUIVO.txt
+K85136898088957

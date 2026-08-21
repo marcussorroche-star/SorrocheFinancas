@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📈 Investimentos</h2>
+    </div>
+
+    <div class="row mb-4">
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6>Total investido</h6>
+                    <h4>
+                        R$ {{ "%.2f"|format(total_investido) }}
+                    </h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6>Valor atual</h6>
+                    <h4>
+                        R$ {{ "%.2f"|format(total_atual) }}
+                    </h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6>Resultado</h6>
+                    <h4>
+                        R$ {{ "%.2f"|format(rendimento) }}
+                    </h4>
+                    <small>
+                        {{ "%.2f"|format(percentual) }}%
+                    </small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <h4>Novo investimento</h4>
+
+            <form method="POST">
+
+                <input
+                    class="form-control mb-2"
+                    name="nome"
+                    placeholder="Nome do investimento"
+                    required
+                >
+
+                <select
+                    class="form-control mb-2"
+                    name="tipo"
+                    required
+                >
+                    <option value="">Tipo</option>
+                    <option value="Poupança">Poupança</option>
+                    <option value="CDB">CDB</option>
+                    <option value="Tesouro Direto">Tesouro Direto</option>
+                    <option value="Fundo">Fundo</option>
+                    <option value="Ações">Ações</option>
+                    <option value="ETF">ETF</option>
+                    <option value="Cripto">Cripto</option>
+                    <option value="Outro">Outro</option>
+                </select>
+
+                <input
+                    class="form-control mb-2"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="valor_investido"
+                    placeholder="Valor investido"
+                    required
+                >
+
+                <input
+                    class="form-control mb-2"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="valor_atual"
+                    placeholder="Valor atual"
+                    required
+                >
+
+                <input
+                    class="form-control mb-2"
+                    type="date"
+                    name="data"
+                >
+
+                <input
+                    class="form-control mb-2"
+                    name="observacao"
+                    placeholder="Observação"
+                >
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Cadastrar investimento
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    {% for item in investimentos %}
+
+    <div class="card mb-3">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between">
+
+                <div>
+
+                    <h4>{{ item.nome }}</h4>
+
+                    <p class="mb-1">
+                        Tipo:
+                        <strong>{{ item.tipo }}</strong>
+                    </p>
+
+                    <p class="mb-1">
+                        Investido:
+                        <strong>
+                            R$ {{ "%.2f"|format(item.valor_investido) }}
+                        </strong>
+                    </p>
+
+                    <p class="mb-1">
+                        Valor atual:
+                        <strong>
+                            R$ {{ "%.2f"|format(item.valor_atual) }}
+                        </strong>
+                    </p>
+
+                    <p class="mb-1">
+                        Resultado:
+                        <strong>
+                            R$ {{
+                                "%.2f"|format(
+                                    item.valor_atual -
+                                    item.valor_investido
+                                )
+                            }}
+                        </strong>
+                    </p>
+
+                    {% if item.observacao %}
+                    <p>
+                        {{ item.observacao }}
+                    </p>
+                    {% endif %}
+
+                </div>
+
+                <div>
+
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'investimentos.excluir',
+                            id=item.id
+                        ) }}"
+                        onsubmit="return confirm(
+                            'Deseja excluir este investimento?'
+                        );"
+                    >
+
+                        <button
+                            type="submit"
+                            class="btn btn-danger btn-sm"
+                        >
+                            Excluir
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-info">
+        Nenhum investimento cadastrado.
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

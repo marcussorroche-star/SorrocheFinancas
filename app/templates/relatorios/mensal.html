@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>📅 Relatório Mensal</h1>
+
+```
+<a href="{{ url_for('financeiro.relatorio_anual') }}"
+   class="btn btn-outline-primary">
+    📆 Relatório Anual
+</a>
+```
+
+</div>
+
+<div class="card shadow p-4 mb-4">
+
+```
+<form method="GET">
+
+    <label class="form-label">
+        Escolha o mês:
+    </label>
+
+    <input
+        type="month"
+        name="mes"
+        class="form-control mb-3"
+        value="{{ mes }}"
+    >
+
+    <button class="btn btn-primary">
+        🔎 Filtrar
+    </button>
+
+</form>
+```
+
+</div>
+
+<div class="row">
+
+```
+<div class="col-md-4 mb-3">
+    <div class="card bg-success text-white shadow p-4">
+        <h5>Receitas</h5>
+        <h3>
+            R$ {{ "%.2f"|format(total_receitas)|replace(".", ",") }}
+        </h3>
+    </div>
+</div>
+
+<div class="col-md-4 mb-3">
+    <div class="card bg-danger text-white shadow p-4">
+        <h5>Despesas</h5>
+        <h3>
+            R$ {{ "%.2f"|format(total_despesas)|replace(".", ",") }}
+        </h3>
+    </div>
+</div>
+
+<div class="col-md-4 mb-3">
+    <div class="card bg-primary text-white shadow p-4">
+        <h5>Saldo</h5>
+        <h3>
+            R$ {{ "%.2f"|format(saldo)|replace(".", ",") }}
+        </h3>
+    </div>
+</div>
+```
+
+</div>
+
+<div class="card shadow mt-4">
+
+```
+<div class="card-body">
+
+    <h5 class="card-title">
+        🥧 Onde foi gasto o dinheiro?
+    </h5>
+
+    {% if categorias %}
+
+    <div style="height: 400px; position: relative;">
+        <canvas id="graficoMensal"></canvas>
+    </div>
+
+    {% else %}
+
+    <div class="text-center text-muted py-5">
+        <h5>Nenhuma despesa encontrada</h5>
+        <p>Não existem despesas cadastradas neste mês.</p>
+    </div>
+
+    {% endif %}
+
+</div>
+```
+
+</div>
+
+{% if categorias %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const categoriasMensal = {{ categorias|tojson }};
+const valoresMensal = {{ valores|tojson }};
+
+new Chart(
+    document.getElementById("graficoMensal"),
+    {
+        type: "pie",
+
+        data: {
+            labels: categoriasMensal,
+
+            datasets: [{
+                data: valoresMensal,
+
+                backgroundColor: [
+                    "#dc3545",
+                    "#198754",
+                    "#0d6efd",
+                    "#ffc107",
+                    "#6f42c1",
+                    "#fd7e14",
+                    "#20c997",
+                    "#0dcaf0",
+                    "#d63384",
+                    "#6c757d"
+                ],
+
+                borderWidth: 2
+            }]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    }
+);
+</script>
+
+{% endif %}
+
+<a href="{{ url_for('financeiro.index') }}"
+class="btn btn-secondary mt-4">
+
+```
+⬅️ Voltar
+```
+
+</a>
+
+{% endblock %}

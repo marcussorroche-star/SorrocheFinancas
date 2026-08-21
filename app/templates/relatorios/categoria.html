@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<h1 class="mb-4">📊 Gastos por Categoria</h1>
+
+
+<div class="card shadow p-4">
+
+
+<table class="table table-striped">
+
+<thead>
+
+<tr>
+<th>Categoria</th>
+<th>Total</th>
+</tr>
+
+</thead>
+
+
+<tbody>
+
+
+{% for item in categorias %}
+
+<tr>
+
+<td>
+{{ item.categoria }}
+</td>
+
+
+<td class="text-danger">
+
+R$ {{ "%.2f"|format(item.total)|replace(".", ",") }}
+
+</td>
+
+</tr>
+
+
+{% else %}
+
+<tr>
+
+<td colspan="2">
+Nenhuma despesa cadastrada.
+</td>
+
+</tr>
+
+
+{% endfor %}
+
+
+</tbody>
+
+</table>
+
+
+</div>
+
+
+<a href="{{ url_for('financeiro.index') }}"
+class="btn btn-primary mt-3">
+
+⬅️ Voltar ao Financeiro
+
+</a>
+
+
+{% endblock %}

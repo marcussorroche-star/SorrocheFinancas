@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="container py-4">
+
+    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
+
+        <div class="card-body text-center">
+
+            <h2 class="mb-3">
+                📱 Sorroche Finanças
+            </h2>
+
+            <p class="text-muted">
+                Acesse nosso WhatsApp
+            </p>
+
+            <div class="my-4">
+
+                <img
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fwa.me%2F5533987130132%3Ftext%3DOl%C3%A1%2521%2520Quero%2520acessar%2520o%2520Sorroche%2520Finan%C3%A7as."
+                    alt="QR Code WhatsApp"
+                    width="300"
+                    height="300"
+                    class="img-fluid"
+                >
+
+            </div>
+
+            <h5>
+                WhatsApp
+            </h5>
+
+            <p>
+                <strong>+55 33 98713-0132</strong>
+            </p>
+
+            <a
+                href="https://wa.me/5533987130132?text=Ol%C3%A1%21%20Quero%20acessar%20o%20Sorroche%20Finan%C3%A7as."
+                target="_blank"
+                class="btn btn-success btn-lg"
+            >
+                💬 Abrir WhatsApp
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

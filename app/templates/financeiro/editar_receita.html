@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<h1>✏️ Editar Receita</h1>
+
+<div class="card shadow p-4">
+
+<form method="POST">
+
+<label>Descrição</label>
+
+<input
+type="text"
+name="descricao"
+class="form-control mb-3"
+value="{{ receita.descricao }}"
+required>
+
+
+<label>Valor</label>
+
+<input
+type="number"
+name="valor"
+step="0.01"
+class="form-control mb-3"
+value="{{ receita.valor }}"
+required>
+
+
+<button class="btn btn-success">
+Salvar alteração
+</button>
+
+
+<a href="{{ url_for('financeiro.index') }}"
+class="btn btn-secondary">
+Cancelar
+</a>
+
+
+</form>
+
+</div>
+
+{% endblock %}
