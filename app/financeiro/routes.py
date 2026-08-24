@@ -5,6 +5,7 @@ from sqlalchemy import func
 from app import db
 from app.receitas.models import Receita
 from app.despesas.models import Despesa
+from app.financeiro.regra_mensal import calcular_regra_mensal
 
 
 financeiro = Blueprint(
@@ -26,17 +27,68 @@ def index():
     ).all()
 
     total_receitas = sum(
-        r.valor or 0
+        float(r.valor or 0)
         for r in receitas
     )
 
     total_despesas = sum(
-        d.valor or 0
+        float(d.valor or 0)
         for d in despesas
         if d.status == "Pago"
     )
 
     saldo = total_receitas - total_despesas
+
+    # ==========================================
+    # REGRA FINANCEIRA MENSAL
+    # ==========================================
+
+    regra = calcular_regra_mensal()
+
+    disponivel_regra = regra.get(
+        "disponivel",
+        0
+    )
+
+    limite_gastos = regra.get(
+        "limite_gastos"
+    )
+
+    para_gastos = regra.get(
+        "para_gastos",
+        0
+    )
+
+    reserva_emergencia = regra.get(
+        "reserva_emergencia",
+        regra.get("fundo_reserva", 0)
+    )
+
+    reserva_gastos = regra.get(
+        "reserva_gastos",
+        0
+    )
+
+    valor_meta = regra.get(
+        "meta",
+        0
+    )
+
+    # ==========================================
+    # QUANTO AINDA PODE GASTAR
+    # ==========================================
+
+    if limite_gastos is None:
+
+        falta_gastar = 0.0
+
+    else:
+
+        falta_gastar = max(
+            0.0,
+            float(limite_gastos)
+            - float(para_gastos)
+        )
 
     # ==========================================
     # DADOS DO GRÁFICO DE GASTOS
@@ -69,14 +121,17 @@ def index():
     hoje = date.today()
 
     if hoje.month == 12:
+
         proximo_mes = 1
         proximo_ano = hoje.year + 1
+
     else:
+
         proximo_mes = hoje.month + 1
         proximo_ano = hoje.year
 
     despesas_proximo_mes = sum(
-        d.valor or 0
+        float(d.valor or 0)
         for d in despesas
         if d.vencimento
         and d.vencimento.month == proximo_mes
@@ -85,14 +140,42 @@ def index():
 
     return render_template(
         "financeiro.html",
+
         receitas=receitas,
+
         despesas=despesas,
+
         total_receitas=total_receitas,
+
         total_despesas=total_despesas,
+
         saldo=saldo,
+
         despesas_proximo_mes=despesas_proximo_mes,
+
         categorias=categorias,
-        valores=valores
+
+        valores=valores,
+
+        # ======================================
+        # REGRA FINANCEIRA
+        # ======================================
+
+        regra=regra,
+
+        disponivel_regra=disponivel_regra,
+
+        limite_gastos=limite_gastos,
+
+        para_gastos=para_gastos,
+
+        falta_gastar=falta_gastar,
+
+        reserva_emergencia=reserva_emergencia,
+
+        reserva_gastos=reserva_gastos,
+
+        valor_meta=valor_meta
     )
 
 
@@ -120,7 +203,9 @@ def nova_despesa():
     vencimento = request.form.get("vencimento")
 
     if vencimento:
-        vencimento = date.fromisoformat(vencimento)
+        vencimento = date.fromisoformat(
+            vencimento
+        )
 
     despesa = Despesa(
         descricao=request.form.get("descricao"),
@@ -128,7 +213,9 @@ def nova_despesa():
         valor=float(request.form.get("valor")),
         data=date.today(),
         vencimento=vencimento,
-        forma_pagamento=request.form.get("forma_pagamento"),
+        forma_pagamento=request.form.get(
+            "forma_pagamento"
+        ),
         status=request.form.get("status") or "Pendente",
         usuario_id=1
     )
@@ -141,14 +228,20 @@ def nova_despesa():
     )
 
 
-@financeiro.route("/receita/editar/<int:id>", methods=["GET", "POST"])
+@financeiro.route(
+    "/receita/editar/<int:id>",
+    methods=["GET", "POST"]
+)
 def editar_receita(id):
 
     receita = Receita.query.get_or_404(id)
 
     if request.method == "POST":
 
-        receita.descricao = request.form.get("descricao")
+        receita.descricao = request.form.get(
+            "descricao"
+        )
+
         receita.valor = float(
             request.form.get("valor")
         )
@@ -165,28 +258,46 @@ def editar_receita(id):
     )
 
 
-@financeiro.route("/despesa/editar/<int:id>", methods=["GET", "POST"])
+@financeiro.route(
+    "/despesa/editar/<int:id>",
+    methods=["GET", "POST"]
+)
 def editar_despesa(id):
 
     despesa = Despesa.query.get_or_404(id)
 
     if request.method == "POST":
 
-        vencimento = request.form.get("vencimento")
+        vencimento = request.form.get(
+            "vencimento"
+        )
 
         if vencimento:
-            vencimento = date.fromisoformat(vencimento)
+            vencimento = date.fromisoformat(
+                vencimento
+            )
 
-        despesa.descricao = request.form.get("descricao")
-        despesa.categoria = request.form.get("categoria")
+        despesa.descricao = request.form.get(
+            "descricao"
+        )
+
+        despesa.categoria = request.form.get(
+            "categoria"
+        )
+
         despesa.valor = float(
             request.form.get("valor")
         )
+
         despesa.vencimento = vencimento
+
         despesa.forma_pagamento = request.form.get(
             "forma_pagamento"
         )
-        despesa.status = request.form.get("status")
+
+        despesa.status = request.form.get(
+            "status"
+        )
 
         db.session.commit()
 
@@ -234,16 +345,22 @@ def relatorio_mensal():
     mes = request.args.get("mes")
 
     if mes:
+
         try:
+
             ano, numero_mes = map(
                 int,
                 mes.split("-")
             )
+
         except (ValueError, AttributeError):
+
             ano = hoje.year
             numero_mes = hoje.month
             mes = f"{ano:04d}-{numero_mes:02d}"
+
     else:
+
         ano = hoje.year
         numero_mes = hoje.month
         mes = f"{ano:04d}-{numero_mes:02d}"
@@ -259,16 +376,19 @@ def relatorio_mensal():
     ).all()
 
     total_receitas = sum(
-        r.valor or 0
+        float(r.valor or 0)
         for r in receitas
     )
 
     total_despesas = sum(
-        d.valor or 0
+        float(d.valor or 0)
         for d in despesas
     )
 
-    saldo = total_receitas - total_despesas
+    saldo = (
+        total_receitas
+        - total_despesas
+    )
 
     dados = db.session.query(
         Despesa.categoria,
@@ -295,11 +415,17 @@ def relatorio_mensal():
 
     return render_template(
         "relatorios/mensal.html",
+
         total_receitas=total_receitas,
+
         total_despesas=total_despesas,
+
         saldo=saldo,
+
         mes=mes,
+
         categorias=categorias,
+
         valores=valores
     )
 
@@ -307,11 +433,16 @@ def relatorio_mensal():
 @financeiro.route("/relatorio/anual")
 def relatorio_anual():
 
-    ano_texto = request.args.get("ano")
+    ano_texto = request.args.get(
+        "ano"
+    )
 
     try:
+
         ano = int(ano_texto)
+
     except (ValueError, TypeError):
+
         ano = date.today().year
 
     receitas = Receita.query.filter(
@@ -323,16 +454,19 @@ def relatorio_anual():
     ).all()
 
     total_receitas = sum(
-        r.valor or 0
+        float(r.valor or 0)
         for r in receitas
     )
 
     total_despesas = sum(
-        d.valor or 0
+        float(d.valor or 0)
         for d in despesas
     )
 
-    saldo = total_receitas - total_despesas
+    saldo = (
+        total_receitas
+        - total_despesas
+    )
 
     dados = db.session.query(
         Despesa.categoria,
@@ -358,11 +492,17 @@ def relatorio_anual():
 
     return render_template(
         "relatorios/anual.html",
+
         ano=ano,
+
         total_receitas=total_receitas,
+
         total_despesas=total_despesas,
+
         saldo=saldo,
+
         categorias=categorias,
+
         valores=valores
     )
 

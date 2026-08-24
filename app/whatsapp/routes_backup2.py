@@ -51,7 +51,7 @@ whatsapp = Blueprint(
 
 
 # ============================================================
-# CONFIGURAÇÕES META
+# WHATSAPP META
 # ============================================================
 
 WHATSAPP_VERIFY_TOKEN = os.getenv(
@@ -108,48 +108,22 @@ OCR_SPACE_API_KEY = os.getenv(
 
 
 # ============================================================
-# CONTROLE DE MENSAGENS PROCESSADAS
-# ============================================================
-
-MENSAGENS_PROCESSADAS = set()
-
-
-# ============================================================
-# CATEGORIAS
-# ============================================================
-
-CATEGORIAS_DESPESA = [
-    "Mercado",
-    "Farmácia",
-    "Combustível",
-    "Moradia",
-    "Alimentação",
-    "Transporte",
-    "Saúde",
-    "Educação",
-    "Lazer",
-    "Compras",
-    "Contas",
-    "Outros"
-]
-
-
-CATEGORIAS_RECEITA = [
-    "Salário",
-    "Pagamento",
-    "Renda",
-    "Lucro",
-    "Comissão",
-    "Investimentos",
-    "Outros"
-]
-
-
-# ============================================================
 # IDENTIFICAR RECEITA
 # ============================================================
 
 def mensagem_e_receita(texto):
+    """
+    Identifica frases que representam entrada de dinheiro.
+
+    Exemplos:
+    - recebi 5000 de salario
+    - recebi 3000 reais
+    - ganhei 2000
+    - salário recebido 5000
+    - entrou 1500 na conta
+    - recebi pagamento de 2500
+    - recebi meu pagamento
+    """
 
     texto = str(
         texto or ""
@@ -167,7 +141,10 @@ def mensagem_e_receita(texto):
         "ganhou",
         "salário recebido",
         "salario recebido",
+        "salário",
+        "salario",
         "pagamento recebido",
+        "pagamento",
         "entrada",
         "entrou",
         "recebimento",
@@ -220,6 +197,7 @@ def mensagem_e_receita(texto):
         for palavra in palavras_despesa
     )
 
+    # Frases explícitas de despesa têm prioridade.
     if tem_despesa and not (
         "recebi" in texto
         or "recebeu" in texto
@@ -230,173 +208,6 @@ def mensagem_e_receita(texto):
         return False
 
     return tem_receita
-
-
-# ============================================================
-# IDENTIFICAR CATEGORIA
-# ============================================================
-
-def identificar_categoria_texto(texto):
-
-    texto_lower = str(
-        texto or ""
-    ).lower()
-
-    # DESPESAS
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "mercado",
-            "supermercado",
-            "compra de mercado"
-        ]
-    ):
-        return "Mercado"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "farmácia",
-            "farmacia",
-            "remédio",
-            "remedio",
-            "medicamento"
-        ]
-    ):
-        return "Farmácia"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "gasolina",
-            "combustível",
-            "combustivel",
-            "posto",
-            "abasteci",
-            "abastecimento"
-        ]
-    ):
-        return "Combustível"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "almoço",
-            "almoco",
-            "jantar",
-            "lanche",
-            "restaurante",
-            "comida",
-            "ifood"
-        ]
-    ):
-        return "Alimentação"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "uber",
-            "taxi",
-            "táxi",
-            "ônibus",
-            "onibus",
-            "transporte"
-        ]
-    ):
-        return "Transporte"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "aluguel",
-            "casa",
-            "condomínio",
-            "condominio"
-        ]
-    ):
-        return "Moradia"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "luz",
-            "energia",
-            "água",
-            "agua",
-            "internet",
-            "telefone",
-            "conta de"
-        ]
-    ):
-        return "Contas"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "escola",
-            "faculdade",
-            "curso",
-            "mensalidade escolar"
-        ]
-    ):
-        return "Educação"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "médico",
-            "medico",
-            "hospital",
-            "consulta",
-            "plano de saúde",
-            "plano de saude"
-        ]
-    ):
-        return "Saúde"
-
-    if any(
-        palavra in texto_lower
-        for palavra in [
-            "cinema",
-            "viagem",
-            "jogo",
-            "diversão",
-            "diversao"
-        ]
-    ):
-        return "Lazer"
-
-    # RECEITAS
-
-    if (
-        "salário" in texto_lower
-        or "salario" in texto_lower
-    ):
-        return "Salário"
-
-    if "pagamento" in texto_lower:
-        return "Pagamento"
-
-    if "renda" in texto_lower:
-        return "Renda"
-
-    if "lucro" in texto_lower:
-        return "Lucro"
-
-    if (
-        "comissão" in texto_lower
-        or "comissao" in texto_lower
-    ):
-        return "Comissão"
-
-    if (
-        "investimento" in texto_lower
-        or "investimentos" in texto_lower
-    ):
-        return "Investimentos"
-
-    return None
 
 
 # ============================================================
@@ -439,50 +250,46 @@ def consultar_ia(texto):
         else "DESPESA"
     )
 
-    categoria_local = identificar_categoria_texto(
-        texto
-    )
-
     prompt = f"""
 Você é a IA financeira do sistema Sorroche Finanças.
 
-Analise a mensagem recebida.
+Analise a mensagem recebida abaixo.
 
 Mensagem:
 {texto}
 
-Tipo identificado inicialmente:
+O sistema identificou inicialmente esta intenção:
 {tipo_sugerido}
-
-Categoria identificada localmente:
-{categoria_local or "Nenhuma"}
 
 IMPORTANTE:
 
-Se houver uma categoria claramente identificável
-na mensagem, mantenha essa categoria.
+Se a mensagem indicar dinheiro RECEBIDO, GANHO, SALÁRIO,
+PAGAMENTO RECEBIDO, RENDA, LUCRO, COMISSÃO, BONIFICAÇÃO
+ou entrada de dinheiro, o tipo deve ser "receita".
 
-Exemplo:
+Se a mensagem indicar dinheiro GASTO, PAGO, COMPRADO,
+CONTA, MERCADO, GASOLINA, FARMÁCIA ou outra saída de
+dinheiro, o tipo deve ser "despesa".
 
-"Gastei 20 reais no mercado via pix"
+Identifique:
 
-deve obrigatoriamente resultar em:
+1. tipo
+2. valor
+3. categoria
+4. forma de pagamento
+5. descrição
 
-categoria = "Mercado"
+Para receitas, categorias possíveis:
 
-Nunca transforme Mercado em Outros quando a palavra
-mercado estiver presente.
+Salário
+Pagamento
+Renda
+Lucro
+Comissão
+Investimentos
+Outros
 
-Se a mensagem indicar dinheiro RECEBIDO, GANHO,
-SALÁRIO, PAGAMENTO RECEBIDO, RENDA, LUCRO,
-COMISSÃO, BONIFICAÇÃO ou entrada de dinheiro,
-o tipo deve ser "receita".
-
-Se indicar dinheiro GASTO, PAGO, COMPRADO,
-MERCADO, GASOLINA, FARMÁCIA ou outra saída,
-o tipo deve ser "despesa".
-
-Categorias de despesas:
+Para despesas, categorias possíveis:
 
 Mercado
 Farmácia
@@ -497,17 +304,7 @@ Compras
 Contas
 Outros
 
-Categorias de receitas:
-
-Salário
-Pagamento
-Renda
-Lucro
-Comissão
-Investimentos
-Outros
-
-Formas de pagamento:
+Formas de pagamento possíveis:
 
 Cartão
 Pix
@@ -515,14 +312,24 @@ Dinheiro
 Boleto
 Outro
 
-Responda SOMENTE JSON válido.
+Responda SOMENTE com JSON válido.
 
-Formato:
+Formato obrigatório:
 
 {{
     "tipo": "despesa",
     "valor": 0,
     "categoria": "Outros",
+    "forma_pagamento": "Outro",
+    "descricao": "descrição"
+}}
+
+Se for uma receita, use:
+
+{{
+    "tipo": "receita",
+    "valor": 0,
+    "categoria": "Salário",
     "forma_pagamento": "Outro",
     "descricao": "descrição"
 }}
@@ -567,10 +374,12 @@ Formato:
         if inicio == -1 or fim == -1:
             return None
 
+        texto_json = texto_resposta[
+            inicio:fim + 1
+        ]
+
         resultado = json.loads(
-            texto_resposta[
-                inicio:fim + 1
-            ]
+            texto_json
         )
 
         valor = resultado.get(
@@ -580,7 +389,10 @@ Formato:
         if valor is None:
             return None
 
-        if isinstance(valor, str):
+        if isinstance(
+            valor,
+            str
+        ):
 
             valor = (
                 valor
@@ -600,6 +412,9 @@ Formato:
             )
         ).strip().lower()
 
+        # Proteção contra erro da IA.
+        # A identificação local tem prioridade para
+        # frases claramente reconhecidas como receita.
         if mensagem_e_receita(texto):
 
             tipo = "receita"
@@ -632,41 +447,45 @@ Formato:
             )
         ).strip()
 
-        categoria_detectada = identificar_categoria_texto(
-            texto
-        )
-
-        if categoria_detectada:
-
-            categoria = categoria_detectada
-
+        # Corrige categoria para receitas quando a IA
+        # retornar categoria inadequada.
         if tipo == "receita":
 
-            categorias_validas = [
-                item.lower()
-                for item in CATEGORIAS_RECEITA
+            categorias_receita = [
+                "Salário",
+                "Pagamento",
+                "Renda",
+                "Lucro",
+                "Comissão",
+                "Investimentos",
+                "Outros"
             ]
 
-            if categoria.lower() not in categorias_validas:
+            categoria_lower = categoria.lower()
 
-                if categoria_detectada in CATEGORIAS_RECEITA:
+            if (
+                categoria_lower not in [
+                    item.lower()
+                    for item in categorias_receita
+                ]
+            ):
 
-                    categoria = categoria_detectada
+                texto_lower = texto.lower()
+
+                if (
+                    "salário" in texto_lower
+                    or "salario" in texto_lower
+                ):
+
+                    categoria = "Salário"
+
+                elif "pagamento" in texto_lower:
+
+                    categoria = "Pagamento"
 
                 else:
 
                     categoria = "Outros"
-
-        else:
-
-            categorias_validas = [
-                item.lower()
-                for item in CATEGORIAS_DESPESA
-            ]
-
-            if categoria.lower() not in categorias_validas:
-
-                categoria = "Outros"
 
         return {
             "tipo": tipo,
@@ -693,7 +512,7 @@ Formato:
 
 def interpretar_mensagem(texto):
 
-    texto = str(
+    texto = (
         texto or ""
     ).strip()
 
@@ -706,21 +525,18 @@ def interpretar_mensagem(texto):
         else "despesa"
     )
 
-    categoria_local = identificar_categoria_texto(
-        texto
-    )
-
     resultado_ia = consultar_ia(
         texto
     )
 
     if resultado_ia:
 
-        resultado_ia["tipo"] = tipo_local
+        # A identificação local de uma frase explícita
+        # de recebimento sempre vence uma interpretação
+        # errada da IA.
+        if tipo_local == "receita":
 
-        if categoria_local:
-
-            resultado_ia["categoria"] = categoria_local
+            resultado_ia["tipo"] = "receita"
 
         return resultado_ia
 
@@ -788,13 +604,40 @@ def interpretar_mensagem(texto):
 
         forma_pagamento = "Boleto"
 
+    # ========================================================
+    # RECEITA
+    # ========================================================
+
     if tipo_local == "receita":
 
-        categoria = categoria_local or "Outros"
+        categoria = "Outros"
 
-        if categoria not in CATEGORIAS_RECEITA:
+        if (
+            "salário" in texto_lower
+            or "salario" in texto_lower
+        ):
 
-            categoria = "Outros"
+            categoria = "Salário"
+
+        elif "pagamento" in texto_lower:
+
+            categoria = "Pagamento"
+
+        elif "lucro" in texto_lower:
+
+            categoria = "Lucro"
+
+        elif "comissão" in texto_lower:
+
+            categoria = "Comissão"
+
+        elif "comissao" in texto_lower:
+
+            categoria = "Comissão"
+
+        elif "renda" in texto_lower:
+
+            categoria = "Renda"
 
         return {
             "tipo": "receita",
@@ -805,11 +648,47 @@ def interpretar_mensagem(texto):
             "ia": False
         }
 
-    categoria = categoria_local or "Outros"
+    # ========================================================
+    # DESPESA
+    # ========================================================
 
-    if categoria not in CATEGORIAS_DESPESA:
+    categoria = "Outros"
 
-        categoria = "Outros"
+    if any(
+        palavra in texto_lower
+        for palavra in [
+            "mercado",
+            "supermercado",
+            "compras",
+            "compra de mercado"
+        ]
+    ):
+
+        categoria = "Mercado"
+
+    elif any(
+        palavra in texto_lower
+        for palavra in [
+            "farmácia",
+            "farmacia",
+            "remédio",
+            "remedio"
+        ]
+    ):
+
+        categoria = "Farmácia"
+
+    elif any(
+        palavra in texto_lower
+        for palavra in [
+            "combustível",
+            "combustivel",
+            "gasolina",
+            "posto"
+        ]
+    ):
+
+        categoria = "Combustível"
 
     return {
         "tipo": "despesa",
@@ -822,20 +701,17 @@ def interpretar_mensagem(texto):
 
 
 # ============================================================
-# LOCALIZAR OU CRIAR PASTA
+# LOCALIZAR PASTA DA CATEGORIA
 # ============================================================
 
-def encontrar_ou_criar_pasta_categoria(
-    categoria
-):
+def encontrar_pasta_categoria(categoria):
 
     categoria = str(
-        categoria or "Outros"
+        categoria or ""
     ).strip()
 
     if not categoria:
-
-        categoria = "Outros"
+        return None
 
     try:
 
@@ -855,51 +731,17 @@ def encontrar_ou_criar_pasta_categoria(
 
             return pasta
 
-        cores = [
-            "slate",
-            "emerald",
-            "amber",
-            "rose",
-            "sky",
-            "violet"
-        ]
-
-        quantidade = Pasta.query.count()
-
-        cor = cores[
-            quantidade % len(cores)
-        ]
-
-        pasta = Pasta(
-            nome=categoria,
-            descricao=(
-                f"Pasta automática da categoria "
-                f"{categoria}"
-            ),
-            cor=cor
-        )
-
-        db.session.add(
-            pasta
-        )
-
-        db.session.commit()
-
         print(
-            "PASTA CRIADA AUTOMATICAMENTE:",
-            pasta.id,
-            pasta.nome,
-            pasta.cor
+            "NENHUMA PASTA ENCONTRADA PARA A CATEGORIA:",
+            categoria
         )
 
-        return pasta
+        return None
 
     except Exception as exc:
 
-        db.session.rollback()
-
         print(
-            "ERRO AO LOCALIZAR/CRIAR PASTA:",
+            "ERRO AO LOCALIZAR PASTA:",
             exc
         )
 
@@ -919,18 +761,7 @@ def criar_despesa(
         "Outros"
     )
 
-    categoria_detectada = identificar_categoria_texto(
-        dados_interpretados.get(
-            "descricao",
-            ""
-        )
-    )
-
-    if categoria_detectada:
-
-        categoria = categoria_detectada
-
-    pasta = encontrar_ou_criar_pasta_categoria(
+    pasta = encontrar_pasta_categoria(
         categoria
     )
 
@@ -952,7 +783,6 @@ def criar_despesa(
     }
 
     if pasta:
-
         dados_despesa["pasta_id"] = pasta.id
 
     despesa = Despesa(
@@ -999,6 +829,10 @@ def criar_receita(
         "data": date.today(),
         "usuario_id": 1
     }
+
+    # Alguns projetos podem possuir categoria e forma
+    # de pagamento no modelo Receita. Para manter
+    # compatibilidade, verificamos os campos existentes.
 
     colunas = Receita.__table__.columns.keys()
 
@@ -1182,6 +1016,10 @@ def analisar_texto_recebido(
             "despesa"
         ).lower()
 
+        # ====================================================
+        # RECEITA
+        # ====================================================
+
         if tipo == "receita":
 
             receita = criar_receita(
@@ -1203,6 +1041,10 @@ def analisar_texto_recebido(
                     dados
                 )
             }
+
+        # ====================================================
+        # DESPESA
+        # ====================================================
 
         despesa = criar_despesa(
             dados
@@ -1379,7 +1221,7 @@ def enviar_mensagem_whatsapp(
 
 
 # ============================================================
-# BAIXAR MÍDIA META
+# BAIXAR MÍDIA DA META
 # ============================================================
 
 def baixar_midia_meta(
@@ -1458,7 +1300,7 @@ def baixar_midia_meta(
 
 
 # ============================================================
-# OCR
+# OCR DA IMAGEM
 # ============================================================
 
 def extrair_texto_imagem(
@@ -1570,7 +1412,6 @@ def extrair_texto_imagem(
             ).strip()
 
             if texto:
-
                 textos.append(
                     texto
                 )
@@ -1608,7 +1449,7 @@ def extrair_texto_imagem(
 
 
 # ============================================================
-# PROCESSAR FOTO
+# PROCESSAR FOTO RECEBIDA PELO WHATSAPP
 # ============================================================
 
 def processar_foto_whatsapp(
@@ -1667,6 +1508,7 @@ def processar_foto_whatsapp(
     )
 
     resultado["tipo"] = "foto"
+
     resultado["texto_ocr"] = texto_ocr
 
     return resultado
@@ -1687,7 +1529,9 @@ def transcrever_audio(
 
         try:
 
-            from faster_whisper import WhisperModel
+            from faster_whisper import (
+                WhisperModel
+            )
 
         except ImportError:
 
@@ -1817,7 +1661,7 @@ def transcrever_audio(
 
 
 # ============================================================
-# PROCESSAR ÁUDIO
+# PROCESSAR ÁUDIO RECEBIDO PELO WHATSAPP
 # ============================================================
 
 def processar_audio_whatsapp(
@@ -1867,6 +1711,7 @@ def processar_audio_whatsapp(
     )
 
     resultado["tipo"] = "audio"
+
     resultado["texto_transcrito"] = texto
 
     return resultado
@@ -1994,24 +1839,11 @@ def processar_webhook_meta(
                     "id"
                 )
 
-                if message_id:
-
-                    if message_id in MENSAGENS_PROCESSADAS:
-
-                        print(
-                            "MENSAGEM JÁ PROCESSADA:",
-                            message_id
-                        )
-
-                        continue
-
-                    MENSAGENS_PROCESSADAS.add(
-                        message_id
-                    )
-
                 resultado = None
 
+                # ====================================================
                 # TEXTO
+                # ====================================================
 
                 if tipo == "text":
 
@@ -2036,7 +1868,9 @@ def processar_webhook_meta(
                             )
                         )
 
+                # ====================================================
                 # IMAGEM
+                # ====================================================
 
                 elif tipo == "image":
 
@@ -2075,7 +1909,9 @@ def processar_webhook_meta(
                             )
                         }
 
+                # ====================================================
                 # ÁUDIO
+                # ====================================================
 
                 elif tipo == "audio":
 
@@ -2131,7 +1967,9 @@ def processar_webhook_meta(
                     resultado
                 )
 
+                # ====================================================
                 # RESPOSTA AUTOMÁTICA
+                # ====================================================
 
                 if numero and resultado.get(
                     "ok"
@@ -2147,9 +1985,14 @@ def processar_webhook_meta(
                         "texto"
                     )
 
+                    # =================================================
                     # RECEITA
+                    # =================================================
 
-                    if tipo_lancamento == "receita":
+                    if (
+                        tipo_lancamento
+                        == "receita"
+                    ):
 
                         receita = resultado.get(
                             "receita",
@@ -2183,7 +2026,9 @@ def processar_webhook_meta(
                             "no sistema."
                         )
 
+                    # =================================================
                     # DESPESA
+                    # =================================================
 
                     else:
 
@@ -2262,9 +2107,11 @@ def processar_webhook_meta(
                             f"{origem}"
                         )
 
-                    envio = enviar_mensagem_whatsapp(
-                        numero,
-                        resposta
+                    envio = (
+                        enviar_mensagem_whatsapp(
+                            numero,
+                            resposta
+                        )
                     )
 
                     resultado[
@@ -2278,13 +2125,15 @@ def processar_webhook_meta(
                         "Não foi possível processar a mensagem."
                     )
 
-                    envio = enviar_mensagem_whatsapp(
-                        numero,
-                        (
-                            "Sorroche Finanças\n\n"
-                            "Não consegui registrar "
-                            "essa informação.\n\n"
-                            f"{erro}"
+                    envio = (
+                        enviar_mensagem_whatsapp(
+                            numero,
+                            (
+                                "Sorroche Finanças\n\n"
+                                "Não consegui registrar "
+                                "essa informação.\n\n"
+                                f"{erro}"
+                            )
                         )
                     )
 
@@ -2569,7 +2418,9 @@ def receber_audio():
 )
 def webhook():
 
-    # VERIFICAÇÃO META
+    # --------------------------------------------------------
+    # VERIFICAÇÃO DA META
+    # --------------------------------------------------------
 
     if request.method == "GET":
 
@@ -2599,7 +2450,9 @@ def webhook():
             )
         }), 403
 
+    # --------------------------------------------------------
     # ASSINATURA
+    # --------------------------------------------------------
 
     if not verificar_assinatura_meta():
 
@@ -2610,7 +2463,9 @@ def webhook():
             )
         }), 401
 
+    # --------------------------------------------------------
     # JSON
+    # --------------------------------------------------------
 
     dados = request.get_json(
         silent=True
@@ -2627,10 +2482,14 @@ def webhook():
         )
     )
 
+    # --------------------------------------------------------
     # PROCESSAMENTO
+    # --------------------------------------------------------
 
-    resultados = processar_webhook_meta(
-        dados
+    resultados = (
+        processar_webhook_meta(
+            dados
+        )
     )
 
     print(
@@ -2644,7 +2503,9 @@ def webhook():
         )
     )
 
-    # RESPOSTA META
+    # --------------------------------------------------------
+    # RESPOSTA PARA META
+    # --------------------------------------------------------
 
     return jsonify({
         "ok": True,

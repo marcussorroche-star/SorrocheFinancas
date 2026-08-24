@@ -5,12 +5,17 @@
 <div class="container-fluid">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
+
         <div>
+
             <h2>Sorroche Finanças</h2>
+
             <p class="text-muted mb-0">
                 Controle financeiro
             </p>
+
         </div>
+
     </div>
 
 
@@ -19,6 +24,7 @@
     ====================================================== -->
 
     <div class="row g-3 mb-4">
+
 
         <div class="col-md-4">
 
@@ -32,7 +38,9 @@
 
                     <h3>
                         R$
-                        {{ "%.2f"|format(total_receitas or 0) }}
+                        {{ "%.2f"|format(
+                            total_receitas or 0
+                        ) }}
                     </h3>
 
                 </div>
@@ -54,7 +62,9 @@
 
                     <h3>
                         R$
-                        {{ "%.2f"|format(total_despesas or 0) }}
+                        {{ "%.2f"|format(
+                            total_despesas or 0
+                        ) }}
                     </h3>
 
                 </div>
@@ -76,8 +86,206 @@
 
                     <h3>
                         R$
-                        {{ "%.2f"|format(saldo or 0) }}
+                        {{ "%.2f"|format(
+                            saldo or 0
+                        ) }}
                     </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         REGRA FINANCEIRA
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body">
+
+            <h4 class="mb-4">
+                📊 Regra Financeira do Mês
+            </h4>
+
+
+            <div class="row g-3">
+
+
+                <!-- DISPONÍVEL -->
+
+                <div class="col-md-4">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-body">
+
+                            <h6 class="text-muted">
+                                💰 Disponível
+                            </h6>
+
+                            <h3>
+                                R$
+                                {{ "%.2f"|format(
+                                    disponivel_regra or 0
+                                ) }}
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- GASTOS PERMITIDOS -->
+
+                <div class="col-md-4">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-body">
+
+                            <h6 class="text-muted">
+                                💸 Gastos permitidos
+                            </h6>
+
+                            <h3>
+                                R$
+                                {{ "%.2f"|format(
+                                    para_gastos or 0
+                                ) }}
+                            </h3>
+
+                            {% if limite_gastos is not none %}
+
+                            <small class="text-muted">
+
+                                Limite:
+                                R$
+                                {{ "%.2f"|format(
+                                    limite_gastos
+                                ) }}
+
+                            </small>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FALTA GASTAR -->
+
+                <div class="col-md-4">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-body">
+
+                            <h6 class="text-muted">
+                                🧾 Falta gastar
+                            </h6>
+
+                            <h3>
+                                R$
+                                {{ "%.2f"|format(
+                                    falta_gastar or 0
+                                ) }}
+                            </h3>
+
+                            <small class="text-muted">
+                                Até o limite de gastos
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESERVA EMERGÊNCIA -->
+
+                <div class="col-md-4">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-body">
+
+                            <h6 class="text-muted">
+                                🛡️ Reserva de emergência
+                            </h6>
+
+                            <h3>
+                                R$
+                                {{ "%.2f"|format(
+                                    reserva_emergencia or 0
+                                ) }}
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESERVA DE GASTOS -->
+
+                <div class="col-md-4">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-body">
+
+                            <h6 class="text-muted">
+                                🏦 Reserva de gastos
+                            </h6>
+
+                            <h3>
+                                R$
+                                {{ "%.2f"|format(
+                                    reserva_gastos or 0
+                                ) }}
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- META -->
+
+                <div class="col-md-4">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-body">
+
+                            <h6 class="text-muted">
+                                🎯 Meta
+                            </h6>
+
+                            <h3>
+                                R$
+                                {{ "%.2f"|format(
+                                    valor_meta or 0
+                                ) }}
+                            </h3>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
@@ -102,7 +310,9 @@
 
             <h3>
                 R$
-                {{ "%.2f"|format(despesas_proximo_mes or 0) }}
+                {{ "%.2f"|format(
+                    despesas_proximo_mes or 0
+                ) }}
             </h3>
 
         </div>
@@ -125,28 +335,39 @@
             <div class="d-flex flex-wrap gap-2">
 
                 <a
-                    href="{{ url_for('financeiro.relatorio_mensal') }}"
+                    href="{{ url_for(
+                        'financeiro.relatorio_mensal'
+                    ) }}"
                     class="btn btn-primary"
                 >
                     📅 Relatório Mensal
                 </a>
 
+
                 <a
-                    href="{{ url_for('financeiro.relatorio_anual') }}"
+                    href="{{ url_for(
+                        'financeiro.relatorio_anual'
+                    ) }}"
                     class="btn btn-success"
                 >
                     📆 Relatório Anual
                 </a>
 
+
                 <a
-                    href="{{ url_for('financeiro.relatorio_categorias') }}"
+                    href="{{ url_for(
+                        'financeiro.relatorio_categorias'
+                    ) }}"
                     class="btn btn-warning"
                 >
                     📂 Gastos por Categoria
                 </a>
 
+
                 <a
-                    href="{{ url_for('financeiro.relatorio_grafico') }}"
+                    href="{{ url_for(
+                        'financeiro.relatorio_grafico'
+                    ) }}"
                     class="btn btn-info"
                 >
                     🥧 Gráfico de Gastos
@@ -221,6 +442,7 @@ document.addEventListener(
         new Chart(
             canvas,
             {
+
                 type: "pie",
 
                 data: {
@@ -229,9 +451,11 @@ document.addEventListener(
 
                     datasets: [
                         {
+
                             data: valores,
 
                             borderWidth: 2
+
                         }
                     ]
 
@@ -246,7 +470,9 @@ document.addEventListener(
                     plugins: {
 
                         legend: {
+
                             position: "right"
+
                         },
 
                         tooltip: {

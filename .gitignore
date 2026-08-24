@@ -1,9 +1,11 @@
 __pycache__/
 *.pyc
-instance/
+
+# Ambiente local
 .env
 
-# Banco local
+# Banco de dados local
+instance/
 *.db
 *.sqlite
 *.sqlite3
@@ -12,6 +14,8 @@ instance/
 *.bak
 *.backup
 *.backup_*
+*_backup.py
+*_backup.html
 
 # Uploads locais
 uploads/
