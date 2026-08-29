@@ -1,4 +1,4 @@
-from flask import Flask
+﻿from flask import Flask
 from app.extensions import db
 
 
@@ -6,11 +6,24 @@ def create_app():
     app = Flask(__name__)
 
     app.config["SECRET_KEY"] = "sorroche-financas-secret-key"
-
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sorroche.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
+
+    # =========================================================
+    # MODELOS
+    # =========================================================
+
+    from app.usuarios.models import Usuario
+    from app.receitas.models import Receita
+    from app.despesas.models import Despesa
+    from app.cartoes.models import Cartao, CompraCartao
+    from app.juros.models import Juro
+    from app.investimentos.models import Investimento
+    from app.metas.models import Meta
+    from app.pastas.models import Pasta
+    from app.estoque.models import ItemEstoque
 
     # =========================================================
     # BLUEPRINTS
