@@ -644,6 +644,195 @@
     color: var(--sf-muted);
     font-size: .75rem;
 }
+/* =========================================================
+   DESKTOP MODERNO — SOMENTE VISUAL
+   ========================================================= */
+
+@media (min-width: 1251px) {
+
+    .sorroche-dashboard {
+        max-width: 1500px;
+        padding: 22px 30px 60px;
+    }
+
+    /* HERO */
+    .sf-hero {
+        min-height: 218px;
+        padding: 34px 42px;
+        margin-bottom: 24px;
+        border-radius: 22px;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, .10);
+        overflow: hidden;
+    }
+
+    .sf-hero h1 {
+        font-size: 2.35rem;
+        letter-spacing: -1.2px;
+        margin-bottom: 8px;
+    }
+
+    .sf-hero p {
+        font-size: .96rem;
+        max-width: 650px;
+    }
+
+    .sf-hero-icon {
+        font-size: 62px;
+        opacity: .95;
+    }
+
+    .sf-hero-circle {
+        opacity: .45;
+        transform: scale(.82);
+    }
+
+    /* MENU PRINCIPAL */
+    .sf-menu {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .sf-menu-item {
+        min-height: 94px;
+        padding: 15px 12px;
+        border-radius: 15px;
+        border: 1px solid #edf1f7;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .045);
+        transition:
+            transform .18s ease,
+            box-shadow .18s ease,
+            border-color .18s ease;
+    }
+
+    .sf-menu-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .09);
+        border-color: #dce5f2;
+    }
+
+    .sf-menu-icon {
+        font-size: 21px;
+        margin-bottom: 6px;
+    }
+
+    .sf-menu-title {
+        font-size: .79rem;
+        font-weight: 700;
+    }
+
+    .sf-menu-desc {
+        font-size: .64rem;
+        margin-top: 3px;
+    }
+
+    /* CARDS */
+    .sf-card {
+        border-radius: 18px;
+        border: 1px solid #edf1f7;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, .045);
+        overflow: hidden;
+    }
+
+    .sf-card-body {
+        padding: 23px;
+    }
+
+    /* INDICADORES */
+    .sf-stat {
+        min-height: 126px;
+        padding: 19px;
+        border-radius: 16px;
+        border: 1px solid #edf1f7;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, .04);
+        transition:
+            transform .18s ease,
+            box-shadow .18s ease;
+    }
+
+    .sf-stat:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .085);
+    }
+
+    .sf-stat-label {
+        font-size: .76rem;
+    }
+
+    .sf-stat-value {
+        font-size: 1.48rem;
+        letter-spacing: -.4px;
+    }
+
+    .sf-stat-icon {
+        font-size: 25px;
+    }
+
+    /* TÍTULOS DAS SEÇÕES */
+    .sf-section {
+        margin: 31px 0 16px;
+    }
+
+    .sf-section h3 {
+        font-size: 1.22rem;
+        font-weight: 750;
+        letter-spacing: -.35px;
+    }
+
+    /* IA */
+    .sf-ai {
+        border-radius: 18px;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, .045);
+    }
+
+    .sf-ai-title {
+        font-size: 1.28rem;
+    }
+
+    /* GRÁFICOS */
+    .sf-chart-card {
+        min-height: 410px;
+        border-radius: 18px;
+    }
+
+    .sf-chart {
+        height: 305px;
+    }
+
+    .sf-chart canvas {
+        max-height: 305px;
+    }
+
+    /* MOVIMENTAÇÕES */
+    .sf-movement {
+        padding: 13px 0;
+        transition: background .15s ease;
+    }
+
+    .sf-movement-icon {
+        width: 42px;
+        height: 42px;
+    }
+
+    .sf-movement-title {
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
+    .sf-movement-date {
+        font-size: .73rem;
+    }
+
+    /* QR / WHATSAPP */
+    .sf-qr {
+        border-radius: 16px;
+    }
+
+    .sf-whatsapp {
+        border-radius: 18px;
+    }
+
+}
 
 /* =========================================================
    RESPONSIVO
@@ -817,7 +1006,6 @@
 
 <a href="/pastas/">
     <div class="sf-menu-item">
-        <div class="sf-menu-item">
         <div class="sf-menu-icon">&#128193;</div>
         <div class="sf-menu-title">Pastas</div>
         <div class="sf-menu-desc">Organização</div>
@@ -2391,4 +2579,5 @@ if (
 </script>
 
 {% endblock %}
+
 
