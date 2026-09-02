@@ -1,6 +1,7 @@
 # app/dashboard/routes.py
 
 from flask import Blueprint, render_template
+from flask_login import login_required
 
 from app.receitas.models import Receita
 from app.despesas.models import Despesa
@@ -14,6 +15,7 @@ dashboard = Blueprint("dashboard", __name__)
 
 
 @dashboard.route("/")
+@login_required
 def home():
 
     # =========================================================

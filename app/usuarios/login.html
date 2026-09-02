@@ -3,23 +3,88 @@
 {% block conteudo %}
 
 <div class="container mt-5">
-    <h2>Login</h2>
 
-    <form>
-        <div class="mb-3">
-            <label>E-mail</label>
-            <input type="email" class="form-control">
+    <div class="row justify-content-center">
+
+        <div class="col-md-5">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body p-4">
+
+                    <h2 class="mb-4 text-center">
+                        Login
+                    </h2>
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('usuarios.login') }}"
+                    >
+
+                        <div class="mb-3">
+
+                            <label
+                                for="email"
+                                class="form-label"
+                            >
+                                E-mail
+                            </label>
+
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-control"
+                                required
+                                autocomplete="email"
+                            >
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label
+                                for="senha"
+                                class="form-label"
+                            >
+                                Senha
+                            </label>
+
+                            <input
+                                type="password"
+                                id="senha"
+                                name="senha"
+                                class="form-control"
+                                required
+                                autocomplete="current-password"
+                            >
+
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100"
+                        >
+                            Entrar
+                        </button>
+
+                    </form>
+
+                    <div class="text-center mt-3">
+
+                        <a href="{{ url_for('usuarios.cadastro') }}">
+                            Ainda não tenho cadastro
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
 
-        <div class="mb-3">
-            <label>Senha</label>
-            <input type="password" class="form-control">
-        </div>
-
-        <button class="btn btn-primary">
-            Entrar
-        </button>
-    </form>
+    </div>
 
 </div>
 

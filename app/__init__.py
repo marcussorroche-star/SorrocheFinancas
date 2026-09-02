@@ -1,5 +1,10 @@
-﻿from flask import Flask
+from flask import Flask
+from flask_login import LoginManager
+
 from app.extensions import db
+
+
+login_manager = LoginManager()
 
 
 def create_app():
@@ -10,6 +15,12 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
+
+    login_manager.init_app(app)
+
+    login_manager.login_view = "usuarios.login"
+    login_manager.login_message = "Faça login para acessar o sistema."
+    login_manager.login_message_category = "warning"
 
     # =========================================================
     # MODELOS
@@ -25,9 +36,16 @@ def create_app():
     from app.pastas.models import Pasta
     from app.estoque.models import ItemEstoque
 
+    @login_manager.user_loader
+    def carregar_usuario(usuario_id):
+        return Usuario.query.get(int(usuario_id))
+
     # =========================================================
     # BLUEPRINTS
     # =========================================================
+
+    from app.usuarios.routes import usuarios
+    app.register_blueprint(usuarios)
 
     from app.dashboard.routes import dashboard
     app.register_blueprint(dashboard)
