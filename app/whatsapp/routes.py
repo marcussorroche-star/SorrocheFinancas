@@ -487,14 +487,29 @@ def identificar_categoria_texto(texto):
 
 def identificar_consulta_financeira(texto):
 
-    texto_normalizado = normalizar_texto(
-        texto
+    texto_normalizado = normalizar_texto(texto)
+
+    # Remove a palavra "eu"
+    texto_normalizado = re.sub(
+        r"\beu\b",
+        "",
+        texto_normalizado
     )
+
+    # Corrige espaços duplicados depois da remoção
+    texto_normalizado = re.sub(
+        r"\s+",
+        " ",
+        texto_normalizado
+    ).strip()
 
     if not texto_normalizado:
         return None
 
-    # QUANTO RECEBI
+    # ========================================================
+    # RECEITAS DO MÊS
+    # ========================================================
+
     if (
         "quanto recebi" in texto_normalizado
         or "quanto entrou" in texto_normalizado
@@ -504,41 +519,32 @@ def identificar_consulta_financeira(texto):
     ):
         return "receitas_mes"
 
-    # QUANTO GASTEI NO MERCADO
+    # ========================================================
+    # GASTOS NO MERCADO
+    # ========================================================
+
     if (
-        (
-            "quanto gastei no mercado"
-            in texto_normalizado
-        )
-        or (
-            "quanto gastei com mercado"
-            in texto_normalizado
-        )
-        or (
-            "gastos do mercado"
-            in texto_normalizado
-        )
-        or (
-            "total mercado"
-            in texto_normalizado
-        )
+        "quanto gastei no mercado" in texto_normalizado
+        or "quanto gastei com mercado" in texto_normalizado
+        or "gastos do mercado" in texto_normalizado
+        or "total mercado" in texto_normalizado
     ):
         return "mercado_mes"
 
-    # QUANTO GASTEI NO CARTÃO
+    # ========================================================
+    # GASTOS NO CARTÃO
+    # ========================================================
+
     if (
-        "quanto gastei no cartao"
-        in texto_normalizado
-        or "quanto gastei no cartão"
-        in texto.lower()
-        or "gastos no cartao"
-        in texto_normalizado
-        or "gastos no cartão"
-        in texto.lower()
+        "quanto gastei no cartao" in texto_normalizado
+        or "gastos no cartao" in texto_normalizado
     ):
         return "cartao_mes"
 
-    # QUANTO GASTEI
+    # ========================================================
+    # DESPESAS DO MÊS
+    # ========================================================
+
     if (
         "quanto gastei" in texto_normalizado
         or "quanto paguei" in texto_normalizado
@@ -547,7 +553,10 @@ def identificar_consulta_financeira(texto):
     ):
         return "despesas_mes"
 
-    # QUANTO SOBROU
+    # ========================================================
+    # SALDO DO MÊS
+    # ========================================================
+
     if (
         "quanto sobrou" in texto_normalizado
         or "saldo do mes" in texto_normalizado
@@ -556,50 +565,42 @@ def identificar_consulta_financeira(texto):
     ):
         return "saldo_mes"
 
-    # QUANTO TENHO PARA GASTAR
+    # ========================================================
+    # DISPONÍVEL PARA GASTAR
+    # ========================================================
+
     if (
-        "quanto tenho para gastar"
-        in texto_normalizado
-        or "quanto posso gastar"
-        in texto_normalizado
-        or "quanto ainda posso gastar"
-        in texto_normalizado
+        "quanto tenho para gastar" in texto_normalizado
+        or "quanto posso gastar" in texto_normalizado
+        or "quanto ainda posso gastar" in texto_normalizado
     ):
         return "disponivel_mes"
 
+    # ========================================================
     # METAS
+    # ========================================================
+
     if (
-        "quanto tenho nas metas"
-        in texto_normalizado
-        or "quanto tenho guardado nas metas"
-        in texto_normalizado
-        or "minhas metas"
-        in texto_normalizado
-        or "status das metas"
-        in texto_normalizado
+        "quanto tenho nas metas" in texto_normalizado
+        or "quanto tenho guardado nas metas" in texto_normalizado
+        or "minhas metas" in texto_normalizado
+        or "status das metas" in texto_normalizado
     ):
         return "metas"
 
+    # ========================================================
     # INVESTIMENTOS
+    # ========================================================
+
     if (
-        "quanto investi"
-        in texto_normalizado
-        or "quanto tenho investido"
-        in texto_normalizado
-        or "total investido"
-        in texto_normalizado
-        or "meus investimentos"
-        in texto_normalizado
+        "quanto investi" in texto_normalizado
+        or "quanto tenho investido" in texto_normalizado
+        or "total investido" in texto_normalizado
+        or "meus investimentos" in texto_normalizado
     ):
         return "investimentos"
 
     return None
-
-
-# ============================================================
-# CONSULTA - RECEITAS
-# ============================================================
-
 def consulta_receitas_mes():
 
     receitas = obter_receitas_mes()
@@ -1527,6 +1528,24 @@ def interpretar_mensagem(texto):
     if not texto:
         return None
 
+    # ========================================================
+    # CONSULTA FINANCEIRA
+    # ========================================================
+    # Consultas financeiras são tratadas localmente.
+    # Não dependem do Ollama.
+    # ========================================================
+
+    consulta = processar_consulta_financeira(
+        texto
+    )
+
+    if consulta:
+        return consulta
+
+    # ========================================================
+    # IDENTIFICAÇÃO LOCAL
+    # ========================================================
+
     tipo_local = (
         "receita"
         if mensagem_e_receita(texto)
@@ -1536,6 +1555,10 @@ def interpretar_mensagem(texto):
     categoria_local = identificar_categoria_texto(
         texto
     )
+
+    # ========================================================
+    # IA OLLAMA
+    # ========================================================
 
     resultado_ia = consultar_ia(
         texto
@@ -1550,6 +1573,10 @@ def interpretar_mensagem(texto):
             resultado_ia["categoria"] = categoria_local
 
         return resultado_ia
+
+    # ========================================================
+    # PROCESSAMENTO LOCAL
+    # ========================================================
 
     texto_lower = texto.lower()
 
@@ -1615,6 +1642,10 @@ def interpretar_mensagem(texto):
 
         forma_pagamento = "Boleto"
 
+    # ========================================================
+    # RECEITA
+    # ========================================================
+
     if tipo_local == "receita":
 
         categoria = categoria_local or "Outros"
@@ -1632,6 +1663,10 @@ def interpretar_mensagem(texto):
             "ia": False
         }
 
+    # ========================================================
+    # DESPESA
+    # ========================================================
+
     categoria = categoria_local or "Outros"
 
     if categoria not in CATEGORIAS_DESPESA:
@@ -1646,8 +1681,6 @@ def interpretar_mensagem(texto):
         "forma_pagamento": forma_pagamento,
         "ia": False
     }
-
-
 # ============================================================
 # LOCALIZAR OU CRIAR PASTA
 # ============================================================
@@ -2564,11 +2597,44 @@ def transcrever_audio(
             "INICIANDO FASTER-WHISPER..."
         )
 
-        modelo = WhisperModel(
-            "base",
-            device="cpu",
-            compute_type="int8"
+        # ====================================================
+        # REUTILIZAR O MODELO
+        # ====================================================
+        # O modelo é carregado apenas uma vez por processo.
+        # Isso evita carregar o Whisper novamente a cada áudio.
+        # ====================================================
+
+        modelo = getattr(
+            transcrever_audio,
+            "_modelo_whisper",
+            None
         )
+
+        if modelo is None:
+
+            print(
+                "CARREGANDO MODELO FASTER-WHISPER..."
+            )
+
+            modelo = WhisperModel(
+                "base",
+                device="cpu",
+                compute_type="int8"
+            )
+
+            transcrever_audio._modelo_whisper = (
+                modelo
+            )
+
+            print(
+                "MODELO FASTER-WHISPER CARREGADO."
+            )
+
+        else:
+
+            print(
+                "REUTILIZANDO MODELO FASTER-WHISPER."
+            )
 
         segmentos, info = modelo.transcribe(
             arquivo_temp,
@@ -2641,8 +2707,6 @@ def transcrever_audio(
             except Exception:
 
                 pass
-
-
 # ============================================================
 # PROCESSAR ÁUDIO
 # ============================================================
