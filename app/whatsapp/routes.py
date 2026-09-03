@@ -4,6 +4,7 @@ import hmac
 import hashlib
 import json
 import tempfile
+import unicodedata
 from datetime import date
 
 import requests
@@ -146,6 +147,91 @@ CATEGORIAS_RECEITA = [
 
 
 # ============================================================
+# FUNÇÕES AUXILIARES
+# ============================================================
+
+def normalizar_texto(texto):
+    texto = str(texto or "").lower().strip()
+
+    texto = unicodedata.normalize(
+        "NFD",
+        texto
+    )
+
+    texto = "".join(
+        caractere
+        for caractere in texto
+        if unicodedata.category(caractere) != "Mn"
+    )
+
+    return texto
+
+
+def formatar_reais(valor):
+    try:
+        valor = float(valor or 0)
+    except (TypeError, ValueError):
+        valor = 0.0
+
+    return (
+        f"R$ {valor:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
+
+
+def inicio_e_fim_mes():
+    hoje = date.today()
+
+    inicio = date(
+        hoje.year,
+        hoje.month,
+        1
+    )
+
+    if hoje.month == 12:
+        proximo = date(
+            hoje.year + 1,
+            1,
+            1
+        )
+    else:
+        proximo = date(
+            hoje.year,
+            hoje.month + 1,
+            1
+        )
+
+    return inicio, proximo
+
+
+def obter_despesas_mes():
+    inicio, proximo = inicio_e_fim_mes()
+
+    return Despesa.query.filter(
+        Despesa.data >= inicio,
+        Despesa.data < proximo
+    ).all()
+
+
+def obter_receitas_mes():
+    inicio, proximo = inicio_e_fim_mes()
+
+    return Receita.query.filter(
+        Receita.data >= inicio,
+        Receita.data < proximo
+    ).all()
+
+
+def valor_seguro(valor):
+    try:
+        return float(valor or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+# ============================================================
 # IDENTIFICAR RECEITA
 # ============================================================
 
@@ -241,8 +327,6 @@ def identificar_categoria_texto(texto):
     texto_lower = str(
         texto or ""
     ).lower()
-
-    # DESPESAS
 
     if any(
         palavra in texto_lower
@@ -367,8 +451,6 @@ def identificar_categoria_texto(texto):
     ):
         return "Lazer"
 
-    # RECEITAS
-
     if (
         "salário" in texto_lower
         or "salario" in texto_lower
@@ -397,6 +479,745 @@ def identificar_categoria_texto(texto):
         return "Investimentos"
 
     return None
+
+
+# ============================================================
+# IDENTIFICAR CONSULTA FINANCEIRA
+# ============================================================
+
+def identificar_consulta_financeira(texto):
+
+    texto_normalizado = normalizar_texto(
+        texto
+    )
+
+    if not texto_normalizado:
+        return None
+
+    # QUANTO RECEBI
+    if (
+        "quanto recebi" in texto_normalizado
+        or "quanto entrou" in texto_normalizado
+        or "quanto ganhei" in texto_normalizado
+        or "total de receitas" in texto_normalizado
+        or "minhas receitas" in texto_normalizado
+    ):
+        return "receitas_mes"
+
+    # QUANTO GASTEI NO MERCADO
+    if (
+        (
+            "quanto gastei no mercado"
+            in texto_normalizado
+        )
+        or (
+            "quanto gastei com mercado"
+            in texto_normalizado
+        )
+        or (
+            "gastos do mercado"
+            in texto_normalizado
+        )
+        or (
+            "total mercado"
+            in texto_normalizado
+        )
+    ):
+        return "mercado_mes"
+
+    # QUANTO GASTEI NO CARTÃO
+    if (
+        "quanto gastei no cartao"
+        in texto_normalizado
+        or "quanto gastei no cartão"
+        in texto.lower()
+        or "gastos no cartao"
+        in texto_normalizado
+        or "gastos no cartão"
+        in texto.lower()
+    ):
+        return "cartao_mes"
+
+    # QUANTO GASTEI
+    if (
+        "quanto gastei" in texto_normalizado
+        or "quanto paguei" in texto_normalizado
+        or "total de despesas" in texto_normalizado
+        or "minhas despesas" in texto_normalizado
+    ):
+        return "despesas_mes"
+
+    # QUANTO SOBROU
+    if (
+        "quanto sobrou" in texto_normalizado
+        or "saldo do mes" in texto_normalizado
+        or "saldo desse mes" in texto_normalizado
+        or "saldo deste mes" in texto_normalizado
+    ):
+        return "saldo_mes"
+
+    # QUANTO TENHO PARA GASTAR
+    if (
+        "quanto tenho para gastar"
+        in texto_normalizado
+        or "quanto posso gastar"
+        in texto_normalizado
+        or "quanto ainda posso gastar"
+        in texto_normalizado
+    ):
+        return "disponivel_mes"
+
+    # METAS
+    if (
+        "quanto tenho nas metas"
+        in texto_normalizado
+        or "quanto tenho guardado nas metas"
+        in texto_normalizado
+        or "minhas metas"
+        in texto_normalizado
+        or "status das metas"
+        in texto_normalizado
+    ):
+        return "metas"
+
+    # INVESTIMENTOS
+    if (
+        "quanto investi"
+        in texto_normalizado
+        or "quanto tenho investido"
+        in texto_normalizado
+        or "total investido"
+        in texto_normalizado
+        or "meus investimentos"
+        in texto_normalizado
+    ):
+        return "investimentos"
+
+    return None
+
+
+# ============================================================
+# CONSULTA - RECEITAS
+# ============================================================
+
+def consulta_receitas_mes():
+
+    receitas = obter_receitas_mes()
+
+    total = sum(
+        valor_seguro(receita.valor)
+        for receita in receitas
+    )
+
+    linhas = []
+
+    for receita in receitas:
+        descricao = str(
+            getattr(
+                receita,
+                "descricao",
+                ""
+            ) or "Sem descrição"
+        )
+
+        categoria = str(
+            getattr(
+                receita,
+                "categoria",
+                "Outros"
+            ) or "Outros"
+        )
+
+        data_receita = getattr(
+            receita,
+            "data",
+            None
+        )
+
+        if hasattr(
+            data_receita,
+            "strftime"
+        ):
+            data_formatada = data_receita.strftime(
+                "%d/%m"
+            )
+        else:
+            data_formatada = ""
+
+        linhas.append(
+            f"{data_formatada} - "
+            f"{descricao} - "
+            f"{formatar_reais(receita.valor)}"
+        )
+
+    mensagem = (
+        "Sorroche Finanças\n\n"
+        "Receitas deste mês\n\n"
+        f"Total recebido: {formatar_reais(total)}"
+    )
+
+    if linhas:
+        mensagem += "\n\nLançamentos:\n"
+        mensagem += "\n".join(
+            linhas[:20]
+        )
+
+    return {
+        "ok": True,
+        "tipo": "consulta",
+        "consulta": "receitas_mes",
+        "resposta": mensagem,
+        "total": total,
+        "quantidade": len(receitas)
+    }
+
+
+# ============================================================
+# CONSULTA - DESPESAS
+# ============================================================
+
+def consulta_despesas_mes():
+
+    despesas = obter_despesas_mes()
+
+    total = sum(
+        valor_seguro(despesa.valor)
+        for despesa in despesas
+    )
+
+    linhas = []
+
+    for despesa in despesas:
+
+        descricao = str(
+            getattr(
+                despesa,
+                "descricao",
+                ""
+            ) or "Sem descrição"
+        )
+
+        categoria = str(
+            getattr(
+                despesa,
+                "categoria",
+                "Outros"
+            ) or "Outros"
+        )
+
+        valor = valor_seguro(
+            despesa.valor
+        )
+
+        data_despesa = getattr(
+            despesa,
+            "data",
+            None
+        )
+
+        if hasattr(
+            data_despesa,
+            "strftime"
+        ):
+            data_formatada = data_despesa.strftime(
+                "%d/%m"
+            )
+        else:
+            data_formatada = ""
+
+        linhas.append(
+            f"{data_formatada} - "
+            f"{categoria} - "
+            f"{descricao} - "
+            f"{formatar_reais(valor)}"
+        )
+
+    mensagem = (
+        "Sorroche Finanças\n\n"
+        "Despesas deste mês\n\n"
+        f"Total gasto: {formatar_reais(total)}"
+    )
+
+    if linhas:
+        mensagem += "\n\nLançamentos:\n"
+        mensagem += "\n".join(
+            linhas[:20]
+        )
+
+    return {
+        "ok": True,
+        "tipo": "consulta",
+        "consulta": "despesas_mes",
+        "resposta": mensagem,
+        "total": total,
+        "quantidade": len(despesas)
+    }
+
+
+# ============================================================
+# CONSULTA - SALDO
+# ============================================================
+
+def consulta_saldo_mes():
+
+    receitas = obter_receitas_mes()
+    despesas = obter_despesas_mes()
+
+    total_receitas = sum(
+        valor_seguro(receita.valor)
+        for receita in receitas
+    )
+
+    total_despesas = sum(
+        valor_seguro(despesa.valor)
+        for despesa in despesas
+    )
+
+    saldo = (
+        total_receitas
+        - total_despesas
+    )
+
+    mensagem = (
+        "Sorroche Finanças\n\n"
+        "Saldo deste mês\n\n"
+        f"Receitas: {formatar_reais(total_receitas)}\n"
+        f"Despesas: {formatar_reais(total_despesas)}\n"
+        f"Saldo: {formatar_reais(saldo)}"
+    )
+
+    return {
+        "ok": True,
+        "tipo": "consulta",
+        "consulta": "saldo_mes",
+        "resposta": mensagem,
+        "total_receitas": total_receitas,
+        "total_despesas": total_despesas,
+        "saldo": saldo
+    }
+
+
+# ============================================================
+# CONSULTA - DISPONÍVEL PARA GASTAR
+# ============================================================
+
+def consulta_disponivel_mes():
+
+    receitas = obter_receitas_mes()
+    despesas = obter_despesas_mes()
+
+    total_receitas = sum(
+        valor_seguro(receita.valor)
+        for receita in receitas
+    )
+
+    total_despesas = sum(
+        valor_seguro(despesa.valor)
+        for despesa in despesas
+    )
+
+    disponivel = (
+        total_receitas
+        - total_despesas
+    )
+
+    mensagem = (
+        "Sorroche Finanças\n\n"
+        "Valor disponível no mês\n\n"
+        f"Receitas: {formatar_reais(total_receitas)}\n"
+        f"Despesas: {formatar_reais(total_despesas)}\n"
+        f"Disponível: {formatar_reais(disponivel)}"
+    )
+
+    return {
+        "ok": True,
+        "tipo": "consulta",
+        "consulta": "disponivel_mes",
+        "resposta": mensagem,
+        "disponivel": disponivel
+    }
+
+
+# ============================================================
+# CONSULTA - MERCADO
+# ============================================================
+
+def consulta_mercado_mes():
+
+    despesas = obter_despesas_mes()
+
+    total = 0.0
+    quantidade = 0
+
+    for despesa in despesas:
+
+        categoria = normalizar_texto(
+            getattr(
+                despesa,
+                "categoria",
+                ""
+            )
+        )
+
+        descricao = normalizar_texto(
+            getattr(
+                despesa,
+                "descricao",
+                ""
+            )
+        )
+
+        if (
+            categoria == "mercado"
+            or "mercado" in descricao
+            or "supermercado" in descricao
+        ):
+
+            total += valor_seguro(
+                despesa.valor
+            )
+
+            quantidade += 1
+
+    mensagem = (
+        "Sorroche Finanças\n\n"
+        "Gastos no Mercado este mês\n\n"
+        f"Total: {formatar_reais(total)}\n"
+        f"Lançamentos: {quantidade}"
+    )
+
+    return {
+        "ok": True,
+        "tipo": "consulta",
+        "consulta": "mercado_mes",
+        "resposta": mensagem,
+        "total": total,
+        "quantidade": quantidade
+    }
+
+
+# ============================================================
+# CONSULTA - CARTÃO
+# ============================================================
+
+def consulta_cartao_mes():
+
+    despesas = obter_despesas_mes()
+
+    total = 0.0
+    quantidade = 0
+
+    for despesa in despesas:
+
+        forma = normalizar_texto(
+            getattr(
+                despesa,
+                "forma_pagamento",
+                ""
+            )
+        )
+
+        if forma in [
+            "cartao",
+            "credito",
+            "cartao de credito"
+        ]:
+
+            total += valor_seguro(
+                despesa.valor
+            )
+
+            quantidade += 1
+
+    mensagem = (
+        "Sorroche Finanças\n\n"
+        "Gastos no cartão este mês\n\n"
+        f"Total: {formatar_reais(total)}\n"
+        f"Lançamentos: {quantidade}"
+    )
+
+    return {
+        "ok": True,
+        "tipo": "consulta",
+        "consulta": "cartao_mes",
+        "resposta": mensagem,
+        "total": total,
+        "quantidade": quantidade
+    }
+
+
+# ============================================================
+# CONSULTA - METAS
+# ============================================================
+
+def consulta_metas():
+
+    try:
+
+        from app.metas.models import Meta
+
+    except Exception as exc:
+
+        return {
+            "ok": False,
+            "tipo": "consulta",
+            "consulta": "metas",
+            "erro": (
+                "Não foi possível carregar as metas: "
+                f"{exc}"
+            )
+        }
+
+    try:
+
+        metas = Meta.query.all()
+
+        total_guardado = 0.0
+        total_objetivo = 0.0
+
+        linhas = []
+
+        for meta in metas:
+
+            nome = str(
+                getattr(
+                    meta,
+                    "nome",
+                    "Meta"
+                ) or "Meta"
+            )
+
+            guardado = valor_seguro(
+                getattr(
+                    meta,
+                    "valor_guardado",
+                    0
+                )
+            )
+
+            objetivo = valor_seguro(
+                getattr(
+                    meta,
+                    "valor_objetivo",
+                    0
+                )
+            )
+
+            total_guardado += guardado
+            total_objetivo += objetivo
+
+            if objetivo > 0:
+
+                percentual = (
+                    guardado
+                    / objetivo
+                ) * 100
+
+            else:
+
+                percentual = 0
+
+            linhas.append(
+                f"{nome}: "
+                f"{formatar_reais(guardado)} / "
+                f"{formatar_reais(objetivo)} "
+                f"({percentual:.1f}%)"
+            )
+
+        mensagem = (
+            "Sorroche Finanças\n\n"
+            "Minhas metas\n\n"
+            f"Total guardado: "
+            f"{formatar_reais(total_guardado)}\n"
+            f"Total das metas: "
+            f"{formatar_reais(total_objetivo)}"
+        )
+
+        if linhas:
+
+            mensagem += (
+                "\n\nDetalhamento:\n"
+            )
+
+            mensagem += "\n".join(
+                linhas[:20]
+            )
+
+        return {
+            "ok": True,
+            "tipo": "consulta",
+            "consulta": "metas",
+            "resposta": mensagem,
+            "total_guardado": total_guardado,
+            "total_objetivo": total_objetivo,
+            "quantidade": len(metas)
+        }
+
+    except Exception as exc:
+
+        print(
+            "ERRO CONSULTA METAS:",
+            exc
+        )
+
+        return {
+            "ok": False,
+            "tipo": "consulta",
+            "consulta": "metas",
+            "erro": (
+                "Erro ao consultar as metas: "
+                f"{exc}"
+            )
+        }
+
+
+# ============================================================
+# CONSULTA - INVESTIMENTOS
+# ============================================================
+
+def consulta_investimentos():
+
+    try:
+
+        from app.investimentos.models import Investimento
+
+    except Exception as exc:
+
+        return {
+            "ok": False,
+            "tipo": "consulta",
+            "consulta": "investimentos",
+            "erro": (
+                "Não foi possível carregar os investimentos: "
+                f"{exc}"
+            )
+        }
+
+    try:
+
+        investimentos = Investimento.query.all()
+
+        total = 0.0
+
+        for investimento in investimentos:
+
+            valor = 0.0
+
+            for nome_campo in [
+                "valor",
+                "valor_investido",
+                "valor_aplicado",
+                "aporte"
+            ]:
+
+                if hasattr(
+                    investimento,
+                    nome_campo
+                ):
+
+                    valor = valor_seguro(
+                        getattr(
+                            investimento,
+                            nome_campo,
+                            0
+                        )
+                    )
+
+                    break
+
+            total += valor
+
+        mensagem = (
+            "Sorroche Finanças\n\n"
+            "Investimentos\n\n"
+            f"Total investido: {formatar_reais(total)}\n"
+            f"Registros: {len(investimentos)}"
+        )
+
+        return {
+            "ok": True,
+            "tipo": "consulta",
+            "consulta": "investimentos",
+            "resposta": mensagem,
+            "total": total,
+            "quantidade": len(investimentos)
+        }
+
+    except Exception as exc:
+
+        print(
+            "ERRO CONSULTA INVESTIMENTOS:",
+            exc
+        )
+
+        return {
+            "ok": False,
+            "tipo": "consulta",
+            "consulta": "investimentos",
+            "erro": (
+                "Erro ao consultar os investimentos: "
+                f"{exc}"
+            )
+        }
+
+
+# ============================================================
+# PROCESSAR CONSULTA FINANCEIRA
+# ============================================================
+
+def processar_consulta_financeira(texto):
+
+    consulta = identificar_consulta_financeira(
+        texto
+    )
+
+    if not consulta:
+        return None
+
+    try:
+
+        if consulta == "receitas_mes":
+            return consulta_receitas_mes()
+
+        if consulta == "despesas_mes":
+            return consulta_despesas_mes()
+
+        if consulta == "saldo_mes":
+            return consulta_saldo_mes()
+
+        if consulta == "disponivel_mes":
+            return consulta_disponivel_mes()
+
+        if consulta == "mercado_mes":
+            return consulta_mercado_mes()
+
+        if consulta == "cartao_mes":
+            return consulta_cartao_mes()
+
+        if consulta == "metas":
+            return consulta_metas()
+
+        if consulta == "investimentos":
+            return consulta_investimentos()
+
+        return None
+
+    except Exception as exc:
+
+        print(
+            "ERRO AO PROCESSAR CONSULTA:",
+            exc
+        )
+
+        return {
+            "ok": False,
+            "tipo": "consulta",
+            "consulta": consulta,
+            "erro": (
+                "Erro ao consultar os dados: "
+                f"{exc}"
+            )
+        }
 
 
 # ============================================================
@@ -668,6 +1489,12 @@ Formato:
 
                 categoria = "Outros"
 
+        # PIX = À VISTA
+
+        if forma_pagamento.lower() == "pix":
+
+            forma_pagamento = "À vista"
+
         return {
             "tipo": tipo,
             "descricao": descricao,
@@ -778,7 +1605,7 @@ def interpretar_mensagem(texto):
 
     elif "pix" in texto_lower:
 
-        forma_pagamento = "Pix"
+        forma_pagamento = "À vista"
 
     elif "dinheiro" in texto_lower:
 
@@ -2030,11 +2857,23 @@ def processar_webhook_meta(
 
                     if texto:
 
-                        resultado = (
-                            analisar_texto_recebido(
+                        consulta = (
+                            processar_consulta_financeira(
                                 texto
                             )
                         )
+
+                        if consulta:
+
+                            resultado = consulta
+
+                        else:
+
+                            resultado = (
+                                analisar_texto_recebido(
+                                    texto
+                                )
+                            )
 
                 # IMAGEM
 
@@ -2147,9 +2986,21 @@ def processar_webhook_meta(
                         "texto"
                     )
 
+                    # CONSULTA
+
+                    if tipo_lancamento == "consulta":
+
+                        resposta = resultado.get(
+                            "resposta",
+                            (
+                                "Sorroche Finanças\n\n"
+                                "Consulta realizada."
+                            )
+                        )
+
                     # RECEITA
 
-                    if tipo_lancamento == "receita":
+                    elif tipo_lancamento == "receita":
 
                         receita = resultado.get(
                             "receita",
@@ -2176,7 +3027,7 @@ def processar_webhook_meta(
                         resposta = (
                             "Sorroche Finanças\n\n"
                             "Receita registrada!\n\n"
-                            f"Valor: R$ {valor:.2f}\n"
+                            f"Valor: {formatar_reais(valor)}\n"
                             f"Categoria: {categoria}\n"
                             f"Descrição: {descricao}\n\n"
                             "Entrada de dinheiro registrada "
@@ -2254,7 +3105,7 @@ def processar_webhook_meta(
                         resposta = (
                             "Sorroche Finanças\n\n"
                             "Despesa registrada!\n\n"
-                            f"Valor: R$ {valor:.2f}\n"
+                            f"Valor: {formatar_reais(valor)}\n"
                             f"Categoria: {categoria}\n"
                             f"Pagamento: {forma_pagamento}\n"
                             f"Descrição: {descricao}\n"
@@ -2320,7 +3171,20 @@ def index():
             "ocr",
             "pastas",
             "receitas",
-            "despesas"
+            "despesas",
+            "consultas_financeiras"
+        ],
+        "consultas": [
+            "quanto recebi esse mês",
+            "quanto gastei esse mês",
+            "quanto sobrou esse mês",
+            "quanto tenho para gastar",
+            "quais foram minhas despesas",
+            "quais foram minhas receitas",
+            "quanto gastei no Mercado",
+            "quanto gastei no cartão",
+            "quanto tenho nas metas",
+            "quanto investi"
         ],
         "ia": {
             "modelo": OLLAMA_MODEL,
@@ -2368,6 +3232,24 @@ def teste():
                 "Informe a mensagem."
             )
         }), 400
+
+    consulta = processar_consulta_financeira(
+        mensagem
+    )
+
+    if consulta:
+
+        if not consulta.get(
+            "ok"
+        ):
+
+            return jsonify(
+                consulta
+            ), 400
+
+        return jsonify(
+            consulta
+        )
 
     resultado = analisar_texto_recebido(
         mensagem
