@@ -1,36 +1,43 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block conteudo %}
 
 <div class="container mt-5" style="max-width:500px;">
 
-<h2>Login</h2>
+    <h2>Login</h2>
 
-<form method="POST">
+    <form method="POST">
 
-    <div class="mb-3">
-        <label>E-mail</label>
-        <input
-            type="email"
-            name="email"
-            class="form-control"
-            required>
+        <div class="mb-3">
+            <label>E-mail</label>
+            <input
+                type="email"
+                name="email"
+                class="form-control"
+                required>
+        </div>
+
+        <div class="mb-3">
+            <label>Senha</label>
+            <input
+                type="password"
+                name="senha"
+                class="form-control"
+                required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+            Entrar
+        </button>
+
+    </form>
+
+    <div class="text-center mt-3">
+        <span>Não possui uma conta?</span>
+        <a href="{{ url_for('usuarios.cadastro') }}">
+            Cadastrar
+        </a>
     </div>
-
-    <div class="mb-3">
-        <label>Senha</label>
-        <input
-            type="password"
-            name="senha"
-            class="form-control"
-            required>
-    </div>
-
-    <button class="btn btn-primary w-100">
-        Entrar
-    </button>
-
-</form>
 
 </div>
 
