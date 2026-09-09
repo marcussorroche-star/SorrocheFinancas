@@ -15,6 +15,7 @@ from app import db
 from app.despesas.models import Despesa
 from app.receitas.models import Receita
 from app.pastas.models import Pasta
+from app.whatsapp.leitor_arquivos.leitor import ler_arquivo
 
 
 # ============================================================
@@ -99,6 +100,18 @@ OLLAMA_MODEL = os.getenv(
 
 
 # ============================================================
+# AMBIENTE RENDER
+# ============================================================
+
+EM_RENDER = bool(
+    os.getenv("RENDER")
+    or os.getenv("RENDER_SERVICE_ID")
+)
+
+OLLAMA_ATIVO = not EM_RENDER
+
+
+# ============================================================
 # OCR
 # ============================================================
 
@@ -151,7 +164,10 @@ CATEGORIAS_RECEITA = [
 # ============================================================
 
 def normalizar_texto(texto):
-    texto = str(texto or "").lower().strip()
+
+    texto = str(
+        texto or ""
+    ).lower().strip()
 
     texto = unicodedata.normalize(
         "NFD",
@@ -168,9 +184,18 @@ def normalizar_texto(texto):
 
 
 def formatar_reais(valor):
+
     try:
-        valor = float(valor or 0)
-    except (TypeError, ValueError):
+
+        valor = float(
+            valor or 0
+        )
+
+    except (
+        TypeError,
+        ValueError
+    ):
+
         valor = 0.0
 
     return (
@@ -182,6 +207,7 @@ def formatar_reais(valor):
 
 
 def inicio_e_fim_mes():
+
     hoje = date.today()
 
     inicio = date(
@@ -191,12 +217,15 @@ def inicio_e_fim_mes():
     )
 
     if hoje.month == 12:
+
         proximo = date(
             hoje.year + 1,
             1,
             1
         )
+
     else:
+
         proximo = date(
             hoje.year,
             hoje.month + 1,
@@ -207,6 +236,7 @@ def inicio_e_fim_mes():
 
 
 def obter_despesas_mes():
+
     inicio, proximo = inicio_e_fim_mes()
 
     return Despesa.query.filter(
@@ -216,6 +246,7 @@ def obter_despesas_mes():
 
 
 def obter_receitas_mes():
+
     inicio, proximo = inicio_e_fim_mes()
 
     return Receita.query.filter(
@@ -225,9 +256,18 @@ def obter_receitas_mes():
 
 
 def valor_seguro(valor):
+
     try:
-        return float(valor or 0)
-    except (TypeError, ValueError):
+
+        return float(
+            valor or 0
+        )
+
+    except (
+        TypeError,
+        ValueError
+    ):
+
         return 0.0
 
 
@@ -313,6 +353,7 @@ def mensagem_e_receita(texto):
         or "ganhou" in texto
         or "entrou" in texto
     ):
+
         return False
 
     return tem_receita
@@ -336,6 +377,7 @@ def identificar_categoria_texto(texto):
             "compra de mercado"
         ]
     ):
+
         return "Mercado"
 
     if any(
@@ -348,6 +390,7 @@ def identificar_categoria_texto(texto):
             "medicamento"
         ]
     ):
+
         return "Farmácia"
 
     if any(
@@ -361,6 +404,7 @@ def identificar_categoria_texto(texto):
             "abastecimento"
         ]
     ):
+
         return "Combustível"
 
     if any(
@@ -375,6 +419,7 @@ def identificar_categoria_texto(texto):
             "ifood"
         ]
     ):
+
         return "Alimentação"
 
     if any(
@@ -388,6 +433,7 @@ def identificar_categoria_texto(texto):
             "transporte"
         ]
     ):
+
         return "Transporte"
 
     if any(
@@ -399,6 +445,7 @@ def identificar_categoria_texto(texto):
             "condominio"
         ]
     ):
+
         return "Moradia"
 
     if any(
@@ -413,6 +460,7 @@ def identificar_categoria_texto(texto):
             "conta de"
         ]
     ):
+
         return "Contas"
 
     if any(
@@ -424,6 +472,7 @@ def identificar_categoria_texto(texto):
             "mensalidade escolar"
         ]
     ):
+
         return "Educação"
 
     if any(
@@ -437,6 +486,7 @@ def identificar_categoria_texto(texto):
             "plano de saude"
         ]
     ):
+
         return "Saúde"
 
     if any(
@@ -449,12 +499,14 @@ def identificar_categoria_texto(texto):
             "diversao"
         ]
     ):
+
         return "Lazer"
 
     if (
         "salário" in texto_lower
         or "salario" in texto_lower
     ):
+
         return "Salário"
 
     if "pagamento" in texto_lower:
@@ -470,12 +522,14 @@ def identificar_categoria_texto(texto):
         "comissão" in texto_lower
         or "comissao" in texto_lower
     ):
+
         return "Comissão"
 
     if (
         "investimento" in texto_lower
         or "investimentos" in texto_lower
     ):
+
         return "Investimentos"
 
     return None
@@ -487,16 +541,22 @@ def identificar_categoria_texto(texto):
 
 def identificar_consulta_financeira(texto):
 
-    texto_normalizado = normalizar_texto(texto)
+    texto_normalizado = normalizar_texto(
+        texto
+    )
 
-    # Remove a palavra "eu"
     texto_normalizado = re.sub(
         r"\beu\b",
         "",
         texto_normalizado
     )
 
-    # Corrige espaços duplicados depois da remoção
+    texto_normalizado = re.sub(
+        r"\bque\b",
+        "",
+        texto_normalizado
+    )
+
     texto_normalizado = re.sub(
         r"\s+",
         " ",
@@ -506,10 +566,6 @@ def identificar_consulta_financeira(texto):
     if not texto_normalizado:
         return None
 
-    # ========================================================
-    # RECEITAS DO MÊS
-    # ========================================================
-
     if (
         "quanto recebi" in texto_normalizado
         or "quanto entrou" in texto_normalizado
@@ -517,11 +573,8 @@ def identificar_consulta_financeira(texto):
         or "total de receitas" in texto_normalizado
         or "minhas receitas" in texto_normalizado
     ):
-        return "receitas_mes"
 
-    # ========================================================
-    # GASTOS NO MERCADO
-    # ========================================================
+        return "receitas_mes"
 
     if (
         "quanto gastei no mercado" in texto_normalizado
@@ -529,21 +582,15 @@ def identificar_consulta_financeira(texto):
         or "gastos do mercado" in texto_normalizado
         or "total mercado" in texto_normalizado
     ):
-        return "mercado_mes"
 
-    # ========================================================
-    # GASTOS NO CARTÃO
-    # ========================================================
+        return "mercado_mes"
 
     if (
         "quanto gastei no cartao" in texto_normalizado
         or "gastos no cartao" in texto_normalizado
     ):
-        return "cartao_mes"
 
-    # ========================================================
-    # DESPESAS DO MÊS
-    # ========================================================
+        return "cartao_mes"
 
     if (
         "quanto gastei" in texto_normalizado
@@ -551,11 +598,8 @@ def identificar_consulta_financeira(texto):
         or "total de despesas" in texto_normalizado
         or "minhas despesas" in texto_normalizado
     ):
-        return "despesas_mes"
 
-    # ========================================================
-    # SALDO DO MÊS
-    # ========================================================
+        return "despesas_mes"
 
     if (
         "quanto sobrou" in texto_normalizado
@@ -563,22 +607,16 @@ def identificar_consulta_financeira(texto):
         or "saldo desse mes" in texto_normalizado
         or "saldo deste mes" in texto_normalizado
     ):
-        return "saldo_mes"
 
-    # ========================================================
-    # DISPONÍVEL PARA GASTAR
-    # ========================================================
+        return "saldo_mes"
 
     if (
         "quanto tenho para gastar" in texto_normalizado
         or "quanto posso gastar" in texto_normalizado
         or "quanto ainda posso gastar" in texto_normalizado
     ):
-        return "disponivel_mes"
 
-    # ========================================================
-    # METAS
-    # ========================================================
+        return "disponivel_mes"
 
     if (
         "quanto tenho nas metas" in texto_normalizado
@@ -586,11 +624,8 @@ def identificar_consulta_financeira(texto):
         or "minhas metas" in texto_normalizado
         or "status das metas" in texto_normalizado
     ):
-        return "metas"
 
-    # ========================================================
-    # INVESTIMENTOS
-    # ========================================================
+        return "metas"
 
     if (
         "quanto investi" in texto_normalizado
@@ -598,21 +633,31 @@ def identificar_consulta_financeira(texto):
         or "total investido" in texto_normalizado
         or "meus investimentos" in texto_normalizado
     ):
+
         return "investimentos"
 
     return None
+
+
+# ============================================================
+# CONSULTA - RECEITAS
+# ============================================================
+
 def consulta_receitas_mes():
 
     receitas = obter_receitas_mes()
 
     total = sum(
-        valor_seguro(receita.valor)
+        valor_seguro(
+            receita.valor
+        )
         for receita in receitas
     )
 
     linhas = []
 
     for receita in receitas:
+
         descricao = str(
             getattr(
                 receita,
@@ -639,10 +684,13 @@ def consulta_receitas_mes():
             data_receita,
             "strftime"
         ):
+
             data_formatada = data_receita.strftime(
                 "%d/%m"
             )
+
         else:
+
             data_formatada = ""
 
         linhas.append(
@@ -658,7 +706,9 @@ def consulta_receitas_mes():
     )
 
     if linhas:
+
         mensagem += "\n\nLançamentos:\n"
+
         mensagem += "\n".join(
             linhas[:20]
         )
@@ -682,7 +732,9 @@ def consulta_despesas_mes():
     despesas = obter_despesas_mes()
 
     total = sum(
-        valor_seguro(despesa.valor)
+        valor_seguro(
+            despesa.valor
+        )
         for despesa in despesas
     )
 
@@ -720,10 +772,13 @@ def consulta_despesas_mes():
             data_despesa,
             "strftime"
         ):
+
             data_formatada = data_despesa.strftime(
                 "%d/%m"
             )
+
         else:
+
             data_formatada = ""
 
         linhas.append(
@@ -740,7 +795,9 @@ def consulta_despesas_mes():
     )
 
     if linhas:
+
         mensagem += "\n\nLançamentos:\n"
+
         mensagem += "\n".join(
             linhas[:20]
         )
@@ -765,12 +822,16 @@ def consulta_saldo_mes():
     despesas = obter_despesas_mes()
 
     total_receitas = sum(
-        valor_seguro(receita.valor)
+        valor_seguro(
+            receita.valor
+        )
         for receita in receitas
     )
 
     total_despesas = sum(
-        valor_seguro(despesa.valor)
+        valor_seguro(
+            despesa.valor
+        )
         for despesa in despesas
     )
 
@@ -808,12 +869,16 @@ def consulta_disponivel_mes():
     despesas = obter_despesas_mes()
 
     total_receitas = sum(
-        valor_seguro(receita.valor)
+        valor_seguro(
+            receita.valor
+        )
         for receita in receitas
     )
 
     total_despesas = sum(
-        valor_seguro(despesa.valor)
+        valor_seguro(
+            despesa.valor
+        )
         for despesa in despesas
     )
 
@@ -1255,6 +1320,14 @@ def qr():
 
 def consultar_ia(texto):
 
+    if not OLLAMA_ATIVO:
+
+        print(
+            "OLLAMA DESATIVADO NO RENDER."
+        )
+
+        return None
+
     tipo_sugerido = (
         "RECEITA"
         if mensagem_e_receita(texto)
@@ -1359,7 +1432,7 @@ Formato:
                 "prompt": prompt,
                 "stream": False
             },
-            timeout=120
+           timeout=10
         )
 
         resposta.raise_for_status()
@@ -1402,7 +1475,10 @@ Formato:
         if valor is None:
             return None
 
-        if isinstance(valor, str):
+        if isinstance(
+            valor,
+            str
+        ):
 
             valor = (
                 valor
@@ -1413,7 +1489,9 @@ Formato:
                 .strip()
             )
 
-        valor = float(valor)
+        valor = float(
+            valor
+        )
 
         tipo = str(
             resultado.get(
@@ -1490,8 +1568,6 @@ Formato:
 
                 categoria = "Outros"
 
-        # PIX = À VISTA
-
         if forma_pagamento.lower() == "pix":
 
             forma_pagamento = "À vista"
@@ -1528,23 +1604,12 @@ def interpretar_mensagem(texto):
     if not texto:
         return None
 
-    # ========================================================
-    # CONSULTA FINANCEIRA
-    # ========================================================
-    # Consultas financeiras são tratadas localmente.
-    # Não dependem do Ollama.
-    # ========================================================
-
     consulta = processar_consulta_financeira(
         texto
     )
 
     if consulta:
         return consulta
-
-    # ========================================================
-    # IDENTIFICAÇÃO LOCAL
-    # ========================================================
 
     tipo_local = (
         "receita"
@@ -1555,10 +1620,6 @@ def interpretar_mensagem(texto):
     categoria_local = identificar_categoria_texto(
         texto
     )
-
-    # ========================================================
-    # IA OLLAMA
-    # ========================================================
 
     resultado_ia = consultar_ia(
         texto
@@ -1573,10 +1634,6 @@ def interpretar_mensagem(texto):
             resultado_ia["categoria"] = categoria_local
 
         return resultado_ia
-
-    # ========================================================
-    # PROCESSAMENTO LOCAL
-    # ========================================================
 
     texto_lower = texto.lower()
 
@@ -1642,10 +1699,6 @@ def interpretar_mensagem(texto):
 
         forma_pagamento = "Boleto"
 
-    # ========================================================
-    # RECEITA
-    # ========================================================
-
     if tipo_local == "receita":
 
         categoria = categoria_local or "Outros"
@@ -1663,10 +1716,6 @@ def interpretar_mensagem(texto):
             "ia": False
         }
 
-    # ========================================================
-    # DESPESA
-    # ========================================================
-
     categoria = categoria_local or "Outros"
 
     if categoria not in CATEGORIAS_DESPESA:
@@ -1681,6 +1730,8 @@ def interpretar_mensagem(texto):
         "forma_pagamento": forma_pagamento,
         "ia": False
     }
+
+
 # ============================================================
 # LOCALIZAR OU CRIAR PASTA
 # ============================================================
@@ -2041,6 +2092,10 @@ def analisar_texto_recebido(
             "tipo",
             "despesa"
         ).lower()
+
+        if tipo == "consulta":
+
+            return dados
 
         if tipo == "receita":
 
@@ -2541,6 +2596,21 @@ def transcrever_audio(
     mime_type="audio/ogg"
 ):
 
+    if EM_RENDER:
+
+        print(
+            "FASTER-WHISPER DESATIVADO NO RENDER "
+            "PARA EVITAR CONSUMO EXCESSIVO DE MEMÓRIA."
+        )
+
+        return {
+            "ok": False,
+            "erro": (
+                "A transcrição de áudio está "
+                "temporariamente desativada no servidor."
+            )
+        }
+
     arquivo_temp = None
 
     try:
@@ -2596,13 +2666,6 @@ def transcrever_audio(
         print(
             "INICIANDO FASTER-WHISPER..."
         )
-
-        # ====================================================
-        # REUTILIZAR O MODELO
-        # ====================================================
-        # O modelo é carregado apenas uma vez por processo.
-        # Isso evita carregar o Whisper novamente a cada áudio.
-        # ====================================================
 
         modelo = getattr(
             transcrever_audio,
@@ -2707,6 +2770,8 @@ def transcrever_audio(
             except Exception:
 
                 pass
+
+
 # ============================================================
 # PROCESSAR ÁUDIO
 # ============================================================
@@ -2767,6 +2832,617 @@ def processar_audio_whatsapp(
 # ASSINATURA META
 # ============================================================
 
+# ============================================================
+# PROCESSAR DOCUMENTO WHATSAPP
+# ============================================================
+
+def processar_documento_whatsapp(
+    media_id,
+    numero,
+    nome_arquivo="arquivo",
+    mime_type="application/octet-stream"
+):
+    """
+    Baixa um documento recebido pelo WhatsApp/Meta,
+    salva temporariamente, tenta ler o conteúdo e
+    devolve o texto extraído.
+    """
+
+    arquivo_temp = None
+
+    try:
+        arquivo = baixar_midia_meta(media_id)
+
+        if not arquivo:
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "erro": (
+                    "Recebi o documento, mas não consegui "
+                    "baixar o arquivo."
+                )
+            }
+
+        # --------------------------------------------------------
+        # Descobrir nome e extensão do arquivo
+        # --------------------------------------------------------
+
+        nome_arquivo = (
+            nome_arquivo
+            or "arquivo"
+        )
+
+        extensao = os.path.splitext(
+            nome_arquivo
+        )[1].lower()
+
+        extensoes_por_mime = {
+            "text/plain": ".txt",
+            "text/csv": ".csv",
+            "application/json": ".json",
+            "application/pdf": ".pdf",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+        }
+
+        if not extensao:
+            extensao = extensoes_por_mime.get(
+                mime_type,
+                ""
+            )
+
+            if extensao:
+                nome_arquivo = (
+                    nome_arquivo
+                    + extensao
+                )
+
+        # --------------------------------------------------------
+        # Tipos de arquivo aceitos
+        # --------------------------------------------------------
+
+        extensoes_permitidas = {
+            ".txt",
+            ".csv",
+            ".json",
+            ".xlsx",
+            ".pdf",
+        }
+
+        if extensao not in extensoes_permitidas:
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "Tipo de documento não suportado. "
+                    "Envie um arquivo TXT, CSV, JSON, XLSX ou PDF."
+                )
+            }
+
+        # --------------------------------------------------------
+        # Criar arquivo temporário
+        # --------------------------------------------------------
+
+        arquivo_temp = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=extensao
+        )
+
+        arquivo_temp.write(arquivo)
+        arquivo_temp.close()
+
+        # --------------------------------------------------------
+        # Ler arquivo
+        # --------------------------------------------------------
+
+        resultado = ler_arquivo(
+            arquivo_temp.name
+        )
+
+        if not resultado:
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "Não foi possível ler o conteúdo "
+                    "do documento."
+                )
+            }
+
+        if not resultado.get("ok"):
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": resultado.get(
+                    "erro",
+                    "Não foi possível ler o documento."
+                )
+            }
+
+        texto = resultado.get(
+            "texto",
+            ""
+        )
+
+        return {
+            "ok": True,
+            "tipo": "documento",
+            "arquivo": nome_arquivo,
+            "extensao": extensao,
+            "texto": texto,
+            "tamanho_texto": len(texto),
+            "numero": numero,
+            "mensagem": (
+                "Documento recebido e lido com sucesso."
+            )
+        }
+
+    except Exception as exc:
+        return {
+            "ok": False,
+            "tipo": "documento",
+            "arquivo": nome_arquivo,
+            "erro": str(exc)
+        }
+
+    finally:
+        if arquivo_temp:
+            try:
+                if os.path.exists(
+                    arquivo_temp.name
+                ):
+                    os.remove(
+                        arquivo_temp.name
+                    )
+            except Exception:
+                pass
+
+
+# ============================================================
+# PROCESSAR DOCUMENTO WHATSAPP
+# ============================================================
+
+def processar_documento_whatsapp(
+    media_id,
+    numero,
+    nome_arquivo="arquivo",
+    mime_type="application/octet-stream"
+):
+    """
+    Baixa um documento recebido pelo WhatsApp/Meta,
+    salva temporariamente, lê o conteúdo e devolve
+    o texto extraído.
+    """
+
+    arquivo_temp = None
+
+    try:
+
+        # baixar_midia_meta retorna:
+        # (conteudo, mime_type)
+        conteudo, mime_baixado = baixar_midia_meta(
+            media_id
+        )
+
+        if not conteudo:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "erro": (
+                    "Recebi o documento, mas não consegui "
+                    "baixar o arquivo."
+                )
+            }
+
+        # Se a Meta informou o MIME correto no download,
+        # usamos ele.
+        if mime_baixado:
+
+            mime_type = mime_baixado
+
+        nome_arquivo = (
+            str(nome_arquivo or "arquivo")
+            .strip()
+        )
+
+        if not nome_arquivo:
+
+            nome_arquivo = "arquivo"
+
+        # --------------------------------------------------------
+        # DESCOBRIR EXTENSÃO
+        # --------------------------------------------------------
+
+        extensao = os.path.splitext(
+            nome_arquivo
+        )[1].lower()
+
+        extensoes_por_mime = {
+            "text/plain": ".txt",
+            "text/csv": ".csv",
+            "application/json": ".json",
+            "application/pdf": ".pdf",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+            "application/vnd.ms-excel": ".xls",
+        }
+
+        if not extensao:
+
+            extensao = extensoes_por_mime.get(
+                mime_type,
+                ""
+            )
+
+            if extensao:
+
+                nome_arquivo = (
+                    nome_arquivo
+                    + extensao
+                )
+
+        # --------------------------------------------------------
+        # TIPOS ACEITOS
+        # --------------------------------------------------------
+
+        extensoes_permitidas = {
+            ".txt",
+            ".csv",
+            ".json",
+            ".xlsx",
+            ".pdf",
+        }
+
+        if extensao not in extensoes_permitidas:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "Tipo de documento não suportado. "
+                    "Envie um arquivo TXT, CSV, JSON, XLSX ou PDF."
+                )
+            }
+
+        # --------------------------------------------------------
+        # CRIAR ARQUIVO TEMPORÁRIO
+        # --------------------------------------------------------
+
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=extensao
+        ) as arquivo:
+
+            arquivo.write(
+                conteudo
+            )
+
+            arquivo_temp = arquivo.name
+
+        # --------------------------------------------------------
+        # LER DOCUMENTO
+        # --------------------------------------------------------
+
+        resultado = ler_arquivo(
+            arquivo_temp
+        )
+
+        if not resultado:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "Não foi possível ler o conteúdo "
+                    "do documento."
+                )
+            }
+
+        if not resultado.get(
+            "ok"
+        ):
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": resultado.get(
+                    "erro",
+                    "Não foi possível ler o documento."
+                )
+            }
+
+        texto = str(
+            resultado.get(
+                "texto",
+                ""
+            ) or ""
+        ).strip()
+
+        if not texto:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "O documento foi recebido, mas "
+                    "não encontrei texto para analisar."
+                )
+            }
+
+        return {
+            "ok": True,
+            "tipo": "documento",
+            "arquivo": nome_arquivo,
+            "extensao": extensao,
+            "texto": texto,
+            "tamanho_texto": len(texto),
+            "numero": numero,
+            "mensagem": (
+                "Documento recebido e lido com sucesso."
+            )
+        }
+
+    except Exception as exc:
+
+        print(
+            "ERRO AO PROCESSAR DOCUMENTO:",
+            exc
+        )
+
+        return {
+            "ok": False,
+            "tipo": "documento",
+            "arquivo": nome_arquivo,
+            "erro": str(exc)
+        }
+
+    finally:
+
+        if arquivo_temp:
+
+            try:
+
+                if os.path.exists(
+                    arquivo_temp
+                ):
+
+                    os.remove(
+                        arquivo_temp
+                    )
+
+            except Exception:
+
+                pass
+
+
+# ============================================================
+# PROCESSAR DOCUMENTO WHATSAPP
+# ============================================================
+
+def processar_documento_whatsapp(
+    media_id,
+    numero,
+    nome_arquivo="arquivo",
+    mime_type="application/octet-stream"
+):
+    """
+    Baixa um documento recebido pelo WhatsApp/Meta,
+    salva temporariamente, lê o conteúdo e devolve
+    o texto extraído.
+    """
+
+    arquivo_temp = None
+
+    try:
+
+        # baixar_midia_meta retorna:
+        # (conteudo, mime_type)
+        conteudo, mime_baixado = baixar_midia_meta(
+            media_id
+        )
+
+        if not conteudo:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "erro": (
+                    "Recebi o documento, mas não consegui "
+                    "baixar o arquivo."
+                )
+            }
+
+        if mime_baixado:
+
+            mime_type = mime_baixado
+
+        nome_arquivo = str(
+            nome_arquivo or "arquivo"
+        ).strip()
+
+        if not nome_arquivo:
+
+            nome_arquivo = "arquivo"
+
+        # --------------------------------------------------------
+        # DESCOBRIR EXTENSÃO
+        # --------------------------------------------------------
+
+        extensao = os.path.splitext(
+            nome_arquivo
+        )[1].lower()
+
+        extensoes_por_mime = {
+            "text/plain": ".txt",
+            "text/csv": ".csv",
+            "application/json": ".json",
+            "application/pdf": ".pdf",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+            "application/vnd.ms-excel": ".xls",
+        }
+
+        if not extensao:
+
+            extensao = extensoes_por_mime.get(
+                mime_type,
+                ""
+            )
+
+            if extensao:
+
+                nome_arquivo = (
+                    nome_arquivo
+                    + extensao
+                )
+
+        # --------------------------------------------------------
+        # TIPOS ACEITOS
+        # --------------------------------------------------------
+
+        extensoes_permitidas = {
+            ".txt",
+            ".csv",
+            ".json",
+            ".xlsx",
+            ".pdf",
+        }
+
+        if extensao not in extensoes_permitidas:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "Tipo de documento não suportado. "
+                    "Envie um arquivo TXT, CSV, JSON, XLSX ou PDF."
+                )
+            }
+
+        # --------------------------------------------------------
+        # CRIAR ARQUIVO TEMPORÁRIO
+        # --------------------------------------------------------
+
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=extensao
+        ) as arquivo:
+
+            arquivo.write(
+                conteudo
+            )
+
+            arquivo_temp = arquivo.name
+
+        # --------------------------------------------------------
+        # LER DOCUMENTO
+        # --------------------------------------------------------
+
+        resultado = ler_arquivo(
+            arquivo_temp
+        )
+
+        if not resultado:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "Não foi possível ler o conteúdo "
+                    "do documento."
+                )
+            }
+
+        if not resultado.get(
+            "ok"
+        ):
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": resultado.get(
+                    "erro",
+                    "Não foi possível ler o documento."
+                )
+            }
+
+        texto = str(
+            resultado.get(
+                "texto",
+                ""
+            ) or ""
+        ).strip()
+
+        if not texto:
+
+            return {
+                "ok": False,
+                "tipo": "documento",
+                "arquivo": nome_arquivo,
+                "erro": (
+                    "O documento foi recebido, mas "
+                    "não encontrei texto para analisar."
+                )
+            }
+
+        return {
+            "ok": True,
+            "tipo": "documento",
+            "arquivo": nome_arquivo,
+            "extensao": extensao,
+            "texto": texto,
+            "tamanho_texto": len(texto),
+            "numero": numero,
+            "mensagem": (
+                "Documento recebido e lido com sucesso."
+            )
+        }
+
+    except Exception as exc:
+
+        print(
+            "ERRO AO PROCESSAR DOCUMENTO:",
+            exc
+        )
+
+        return {
+            "ok": False,
+            "tipo": "documento",
+            "arquivo": nome_arquivo,
+            "erro": str(exc)
+        }
+
+    finally:
+
+        if arquivo_temp:
+
+            try:
+
+                if os.path.exists(
+                    arquivo_temp
+                ):
+
+                    os.remove(
+                        arquivo_temp
+                    )
+
+            except Exception:
+
+                pass
+
+
+# ============================================================
+# ASSINATURA META
+# ============================================================
+
 def verificar_assinatura_meta():
 
     if not WHATSAPP_APP_SECRET:
@@ -2778,7 +3454,9 @@ def verificar_assinatura_meta():
         ""
     )
 
-    if not assinatura:
+    if not assinatura.startswith(
+        "sha256="
+    ):
 
         return False
 
@@ -2902,8 +3580,6 @@ def processar_webhook_meta(
 
                 resultado = None
 
-                # TEXTO
-
                 if tipo == "text":
 
                     texto = (
@@ -2938,8 +3614,6 @@ def processar_webhook_meta(
                                     texto
                                 )
                             )
-
-                # IMAGEM
 
                 elif tipo == "image":
 
@@ -2977,8 +3651,6 @@ def processar_webhook_meta(
                                 "o identificador da imagem."
                             )
                         }
-
-                # ÁUDIO
 
                 elif tipo == "audio":
 
@@ -3032,25 +3704,23 @@ def processar_webhook_meta(
 
                 mensagens_processadas.append(
                     resultado
-                )
-
-                # RESPOSTA AUTOMÁTICA
-
+)             
                 if numero and resultado.get(
                     "ok"
                 ):
 
                     tipo_lancamento = resultado.get(
-                        "tipo",
-                        "despesa"
+                        "tipo_lancamento",
+                        resultado.get(
+                            "tipo",
+                            "despesa"
+                        )
                     )
 
                     tipo_mensagem = resultado.get(
-                        "tipo",
-                        "texto"
+                        "tipo_mensagem",
+                        tipo
                     )
-
-                    # CONSULTA
 
                     if tipo_lancamento == "consulta":
 
@@ -3060,15 +3730,6 @@ def processar_webhook_meta(
                                 "Sorroche Finanças\n\n"
                                 "Consulta realizada."
                             )
-                        )
-
-                    # RECEITA
-
-                    elif tipo_lancamento == "receita":
-
-                        receita = resultado.get(
-                            "receita",
-                            {}
                         )
 
                         valor = float(
@@ -3097,8 +3758,6 @@ def processar_webhook_meta(
                             "Entrada de dinheiro registrada "
                             "no sistema."
                         )
-
-                    # DESPESA
 
                     else:
 
@@ -3252,7 +3911,9 @@ def index():
         ],
         "ia": {
             "modelo": OLLAMA_MODEL,
-            "url": OLLAMA_URL
+            "url": OLLAMA_URL,
+            "ativo": OLLAMA_ATIVO,
+            "render": EM_RENDER
         },
         "ocr_configurado": bool(
             OCR_SPACE_API_KEY
@@ -3515,8 +4176,6 @@ def receber_audio():
 )
 def webhook():
 
-    # VERIFICAÇÃO META
-
     if request.method == "GET":
 
         modo = request.args.get(
@@ -3545,8 +4204,6 @@ def webhook():
             )
         }), 403
 
-    # ASSINATURA
-
     if not verificar_assinatura_meta():
 
         return jsonify({
@@ -3555,8 +4212,6 @@ def webhook():
                 "Assinatura do webhook inválida."
             )
         }), 401
-
-    # JSON
 
     dados = request.get_json(
         silent=True
@@ -3573,8 +4228,6 @@ def webhook():
         )
     )
 
-    # PROCESSAMENTO
-
     resultados = processar_webhook_meta(
         dados
     )
@@ -3589,8 +4242,6 @@ def webhook():
             ensure_ascii=False
         )
     )
-
-    # RESPOSTA META
 
     return jsonify({
         "ok": True,
