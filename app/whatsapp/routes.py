@@ -15,7 +15,6 @@ from app import db
 from app.despesas.models import Despesa
 from app.receitas.models import Receita
 from app.pastas.models import Pasta
-from app.whatsapp.leitor_arquivos.leitor import ler_arquivo
 
 
 # ============================================================
@@ -2934,11 +2933,11 @@ def processar_documento_whatsapp(
         # --------------------------------------------------------
         # Ler arquivo
         # --------------------------------------------------------
+        from app.whatsapp.leitor_arquivos.leitor import ler_arquivo
 
         resultado = ler_arquivo(
             arquivo_temp.name
         )
-
         if not resultado:
             return {
                 "ok": False,
@@ -3125,7 +3124,7 @@ def processar_documento_whatsapp(
         # --------------------------------------------------------
         # LER DOCUMENTO
         # --------------------------------------------------------
-
+        from app.whatsapp.leitor_arquivos.leitor import ler_arquivo
         resultado = ler_arquivo(
             arquivo_temp
         )
@@ -3343,6 +3342,7 @@ def processar_documento_whatsapp(
         # --------------------------------------------------------
         # LER DOCUMENTO
         # --------------------------------------------------------
+        from app.whatsapp.leitor_arquivos.leitor import ler_arquivo
 
         resultado = ler_arquivo(
             arquivo_temp
