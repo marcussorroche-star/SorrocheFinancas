@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 import hmac
 import hashlib
@@ -1620,6 +1620,41 @@ def interpretar_mensagem(texto):
         texto
     )
 
+    # ========================================================
+    # VALOR EXPLICITO COM R$
+    # ========================================================
+    # Quando o comprovante possui R$ 300,00, esse valor tem
+    # prioridade sobre qualquer valor que a IA possa interpretar.
+    # Datas, horarios e anos nao possuem R$ e nao entram aqui.
+    # ========================================================
+
+    valor_rs = None
+
+    encontrado_rs = re.search(
+        r"(?i)\bR\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)",
+        texto
+    )
+
+    if encontrado_rs:
+
+        valor_rs_texto = encontrado_rs.group(1)
+
+        try:
+
+            valor_rs_texto = (
+                valor_rs_texto
+                .replace(".", "")
+                .replace(",", ".")
+            )
+
+            valor_rs = float(
+                valor_rs_texto
+            )
+
+        except ValueError:
+
+            valor_rs = None
+
     resultado_ia = consultar_ia(
         texto
     )
@@ -1632,49 +1667,66 @@ def interpretar_mensagem(texto):
 
             resultado_ia["categoria"] = categoria_local
 
+        if valor_rs is not None and valor_rs > 0:
+
+            resultado_ia["valor"] = valor_rs
+
         return resultado_ia
 
     texto_lower = texto.lower()
 
-    padrao_valor = (
-        r"(?:r\$\s*)?"
-        r"(\d+(?:[.,]\d{1,2})?)"
-        r"\s*(?:reais|real)?"
-    )
+    # Identifica somente valores financeiros explícitos.
+    # Evita que datas, horários e outros números do OCR
+    # sejam interpretados como valor da despesa.
 
-    valores = re.findall(
-        padrao_valor,
-        texto_lower
-    )
+    padroes_valor = [
+        r"(?i)\bR\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)",
+        r"(?i)\b(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2}))\s*(?:reais|real)\b",
+    ]
 
-    if not valores:
-        return None
+    valor = None
 
-    valor_texto = valores[0]
+    for padrao in padroes_valor:
 
-    if "," in valor_texto:
-
-        valor_texto = (
-            valor_texto
-            .replace(".", "")
-            .replace(",", ".")
+        encontrado = re.search(
+            padrao,
+            texto
         )
 
-    else:
+        if not encontrado:
+            continue
 
-        valor_texto = valor_texto.replace(
-            ",",
-            ""
-        )
+        valor_texto = encontrado.group(1).strip()
 
-    try:
+        try:
 
-        valor = float(
-            valor_texto
-        )
+            if "," in valor_texto:
 
-    except ValueError:
+                valor_texto = (
+                    valor_texto
+                    .replace(".", "")
+                    .replace(",", ".")
+                )
 
+            else:
+
+                valor_texto = valor_texto.replace(
+                    ".",
+                    ""
+                )
+
+            valor = float(
+                valor_texto
+            )
+
+        except ValueError:
+
+            valor = None
+
+        if valor is not None and valor > 0:
+            break
+
+    if valor is None:
         return None
 
     forma_pagamento = "Outro"
