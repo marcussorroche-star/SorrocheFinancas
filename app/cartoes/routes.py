@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from datetime import date
+from datetime import date, datetime
 
 from app import db
 from .models import Cartao, CompraCartao, FaturaPaga
@@ -325,6 +325,11 @@ def nova_compra(cartao_id):
         "1"
     )
 
+    data_compra_texto = request.form.get(
+        "data_compra",
+        ""
+    ).strip()
+
     try:
 
         valor = float(
@@ -371,12 +376,34 @@ def nova_compra(cartao_id):
     if parcelas < 1:
         parcelas = 1
 
+    data_compra = date.today()
+
+    if data_compra_texto:
+
+        try:
+
+            data_compra = datetime.strptime(
+                data_compra_texto,
+                "%Y-%m-%d"
+            ).date()
+
+        except ValueError:
+
+            flash(
+                "Data da compra inválida.",
+                "danger"
+            )
+
+            return redirect(
+                url_for("cartoes.index")
+            )
+
     compra = CompraCartao(
         cartao_id=cartao.id,
         descricao=descricao,
         categoria=categoria or "Outros",
         valor=valor,
-        data_compra=date.today(),
+        data_compra=data_compra,
         parcelas=parcelas
     )
 

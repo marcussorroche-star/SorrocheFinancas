@@ -247,6 +247,15 @@
                                placeholder="Valor total da compra"
                                required>
 
+                        <label class="form-label mt-1">
+                            Data da compra
+                        </label>
+
+                        <input class="form-control mb-2"
+                               type="date"
+                               name="data_compra"
+                               required>
+
                         <input class="form-control mb-2"
                                type="number"
                                min="1"
@@ -290,6 +299,13 @@
                     <small>
                         Categoria:
                         {{ compra.categoria }}
+                    </small>
+
+                    <br>
+
+                    <small>
+                        Data da compra:
+                        {{ compra.data_compra.strftime('%d/%m/%Y') if compra.data_compra else '-' }}
                     </small>
 
                     <br>

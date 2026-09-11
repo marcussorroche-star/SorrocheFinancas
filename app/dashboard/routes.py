@@ -1,5 +1,7 @@
 # app/dashboard/routes.py
 
+from datetime import date
+
 from flask import Blueprint, render_template
 from flask_login import login_required
 
@@ -10,8 +12,92 @@ from app.juros.models import Juro
 from app.investimentos.models import Investimento
 from app.metas.models import Meta
 
+from app.emprestimos.models import Emprestimo
+from app.financiamentos.models import Financiamento
+from app.consorcios.models import Consorcio
+
 
 dashboard = Blueprint("dashboard", __name__)
+
+
+def parcela_do_mes(
+    quantidade_parcelas,
+    valor_parcela,
+    parcelas_pagas,
+    primeiro_vencimento,
+    dia_vencimento,
+    data_referencia
+):
+    """
+    Calcula o valor da parcela que representa a obrigação
+    do contrato no mês atual.
+
+    Não usa o valor total do contrato.
+    Não cria nenhum lançamento no banco.
+    """
+
+    try:
+        quantidade_parcelas = int(quantidade_parcelas or 0)
+    except (TypeError, ValueError):
+        quantidade_parcelas = 0
+
+    try:
+        parcelas_pagas = int(parcelas_pagas or 0)
+    except (TypeError, ValueError):
+        parcelas_pagas = 0
+
+    try:
+        valor_parcela = float(valor_parcela or 0)
+    except (TypeError, ValueError):
+        valor_parcela = 0
+
+    if quantidade_parcelas <= 0:
+        return 0
+
+    if valor_parcela <= 0:
+        return 0
+
+    if parcelas_pagas >= quantidade_parcelas:
+        return 0
+
+    if primeiro_vencimento:
+        ano_inicio = primeiro_vencimento.year
+        mes_inicio = primeiro_vencimento.month
+
+        mes_atual = (
+            data_referencia.year * 12
+            + data_referencia.month
+        )
+
+        mes_primeiro_vencimento = (
+            ano_inicio * 12
+            + mes_inicio
+        )
+
+        if mes_atual < mes_primeiro_vencimento:
+            return 0
+
+        numero_parcela_no_mes = (
+            mes_atual
+            - mes_primeiro_vencimento
+            + 1
+        )
+
+        if numero_parcela_no_mes > quantidade_parcelas:
+            return 0
+
+        return valor_parcela
+
+    if dia_vencimento:
+        try:
+            dia_vencimento = int(dia_vencimento)
+        except (TypeError, ValueError):
+            dia_vencimento = 0
+
+        if dia_vencimento > 0:
+            return valor_parcela
+
+    return valor_parcela
 
 
 @dashboard.route("/")
@@ -28,6 +114,10 @@ def home():
     juros = Juro.query.all()
     investimentos = Investimento.query.all()
     metas = Meta.query.all()
+
+    emprestimos = Emprestimo.query.all()
+    financiamentos = Financiamento.query.all()
+    consorcios = Consorcio.query.all()
 
     # =========================================================
     # RECEITAS
@@ -93,12 +183,92 @@ def home():
         ) * 100
 
     # =========================================================
+    # PARCELAS DO MÊS
+    #
+    # Importante:
+    # Aqui entram somente as parcelas mensais dos contratos.
+    # O valor total do empréstimo/financiamento/consórcio
+    # NÃO entra no gráfico.
+    #
+    # Nenhum lançamento financeiro é criado.
+    # =========================================================
+
+    data_referencia = date.today()
+
+    total_parcelas_emprestimos = 0
+
+    for emprestimo in emprestimos:
+
+        if emprestimo.status in (
+            "Quitado",
+            "Concluido",
+            "Concluída",
+            "Concluida"
+        ):
+            continue
+
+        total_parcelas_emprestimos += parcela_do_mes(
+            emprestimo.quantidade_parcelas,
+            emprestimo.valor_parcela,
+            emprestimo.parcelas_pagas,
+            emprestimo.primeiro_vencimento,
+            emprestimo.dia_vencimento,
+            data_referencia
+        )
+
+    total_parcelas_financiamentos = 0
+
+    for financiamento in financiamentos:
+
+        if financiamento.status in (
+            "Quitado",
+            "Concluido",
+            "Concluída",
+            "Concluida"
+        ):
+            continue
+
+        total_parcelas_financiamentos += parcela_do_mes(
+            financiamento.quantidade_parcelas,
+            financiamento.valor_parcela,
+            financiamento.parcelas_pagas,
+            financiamento.primeiro_vencimento,
+            financiamento.dia_vencimento,
+            data_referencia
+        )
+
+    total_parcelas_consorcios = 0
+
+    for consorcio in consorcios:
+
+        if consorcio.status in (
+            "Quitado",
+            "Concluido",
+            "Concluída",
+            "Concluida"
+        ):
+            continue
+
+        total_parcelas_consorcios += parcela_do_mes(
+            consorcio.quantidade_parcelas,
+            consorcio.valor_parcela,
+            consorcio.parcelas_pagas,
+            consorcio.primeiro_vencimento,
+            consorcio.dia_vencimento,
+            data_referencia
+        )
+
+    # =========================================================
     # SALDO
     #
     # IMPORTANTE:
     # Compras no cartão não são descontadas novamente aqui.
     # Quando uma fatura é paga, o módulo de cartões registra
     # o pagamento como uma Despesa.
+    #
+    # As novas parcelas também não são descontadas do saldo
+    # automaticamente. Elas entram no gráfico como obrigações
+    # mensais, sem criar despesas duplicadas.
     # =========================================================
 
     saldo = (
@@ -348,6 +518,18 @@ def home():
         {
             "categoria": "Investimentos",
             "valor": total_investido
+        },
+        {
+            "categoria": "Empréstimos",
+            "valor": total_parcelas_emprestimos
+        },
+        {
+            "categoria": "Financiamentos",
+            "valor": total_parcelas_financiamentos
+        },
+        {
+            "categoria": "Consórcios",
+            "valor": total_parcelas_consorcios
         }
     ]
 
@@ -359,8 +541,11 @@ def home():
         "dashboard.html",
 
         total_receitas=total_receitas,
+
         total_despesas=total_despesas,
+
         total_cartoes=total_cartoes,
+
         total_juros=total_juros,
 
         total_investido=total_investido,

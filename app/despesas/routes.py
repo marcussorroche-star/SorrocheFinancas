@@ -4,14 +4,17 @@ from datetime import date
 from app import db
 from .models import Despesa
 
+
 despesas = Blueprint(
     "despesas",
     __name__,
     url_prefix="/despesas"
 )
 
+
 @despesas.route("/")
 def index():
+
     lista = Despesa.query.order_by(
         Despesa.data.desc()
     ).all()
@@ -21,14 +24,18 @@ def index():
         despesas=lista
     )
 
+
 @despesas.route("/nova", methods=["GET", "POST"])
 def nova():
+
     if request.method == "GET":
+
         return render_template(
             "despesas/nova.html"
         )
 
     try:
+
         descricao = request.form.get(
             "descricao",
             ""
@@ -44,7 +51,24 @@ def nova():
             "0"
         ).strip().replace(",", ".")
 
-        valor = float(valor_texto or 0)
+        valor = float(
+            valor_texto or 0
+        )
+
+        data_texto = request.form.get(
+            "data",
+            ""
+        ).strip()
+
+        if data_texto:
+
+            data_despesa = date.fromisoformat(
+                data_texto
+            )
+
+        else:
+
+            data_despesa = date.today()
 
         vencimento_texto = request.form.get(
             "vencimento",
@@ -54,6 +78,7 @@ def nova():
         vencimento = None
 
         if vencimento_texto:
+
             vencimento = date.fromisoformat(
                 vencimento_texto
             )
@@ -69,28 +94,34 @@ def nova():
         ).strip()
 
         if not descricao:
+
             flash(
                 "Informe a descricao da despesa.",
                 "danger"
             )
+
             return redirect(
                 url_for("despesas.nova")
             )
 
         if not categoria:
+
             flash(
                 "Informe a categoria da despesa.",
                 "danger"
             )
+
             return redirect(
                 url_for("despesas.nova")
             )
 
         if valor <= 0:
+
             flash(
                 "Informe um valor maior que zero.",
                 "danger"
             )
+
             return redirect(
                 url_for("despesas.nova")
             )
@@ -99,7 +130,7 @@ def nova():
             descricao=descricao,
             categoria=categoria,
             valor=valor,
-            data=date.today(),
+            data=data_despesa,
             vencimento=vencimento,
             forma_pagamento=forma_pagamento,
             status=status or "Pendente",
@@ -107,6 +138,7 @@ def nova():
         )
 
         db.session.add(despesa)
+
         db.session.commit()
 
         flash(
@@ -119,6 +151,7 @@ def nova():
         )
 
     except Exception as erro:
+
         db.session.rollback()
 
         flash(
@@ -130,12 +163,21 @@ def nova():
             url_for("despesas.nova")
         )
 
-@despesas.route("/excluir/<int:id>", methods=["POST"])
+
+@despesas.route(
+    "/excluir/<int:id>",
+    methods=["POST"]
+)
 def excluir(id):
+
     despesa = Despesa.query.get_or_404(id)
 
     try:
-        db.session.delete(despesa)
+
+        db.session.delete(
+            despesa
+        )
+
         db.session.commit()
 
         flash(
@@ -144,6 +186,7 @@ def excluir(id):
         )
 
     except Exception as erro:
+
         db.session.rollback()
 
         flash(

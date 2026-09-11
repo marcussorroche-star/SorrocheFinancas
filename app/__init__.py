@@ -1,4 +1,4 @@
-from flask import Flask
+﻿from flask import Flask
 from flask_login import LoginManager
 
 from app.extensions import db
@@ -11,7 +11,7 @@ def create_app():
     app = Flask(__name__)
 
     app.config["SECRET_KEY"] = "sorroche-financas-secret-key"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sorroche.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sorroche_unificado.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
@@ -19,7 +19,7 @@ def create_app():
     login_manager.init_app(app)
 
     login_manager.login_view = "usuarios.login"
-    login_manager.login_message = "Faça login para acessar o sistema."
+    login_manager.login_message = "FaÃ§a login para acessar o sistema."
     login_manager.login_message_category = "warning"
 
     # =========================================================
@@ -35,6 +35,9 @@ def create_app():
     from app.metas.models import Meta
     from app.pastas.models import Pasta
     from app.estoque.models import ItemEstoque
+    from app.emprestimos.models import Emprestimo
+    from app.financiamentos.models import Financiamento
+    from app.consorcios.models import Consorcio
 
     @login_manager.user_loader
     def carregar_usuario(usuario_id):
@@ -86,6 +89,13 @@ def create_app():
     from app.financeiro.routes import financeiro
     app.register_blueprint(financeiro, url_prefix="/financeiro")
 
+    from app.emprestimos.routes import emprestimos
+    from app.financiamentos.routes import financiamentos
+    from app.consorcios.routes import consorcios
+    app.register_blueprint(emprestimos, url_prefix="/emprestimos")
+    app.register_blueprint(financiamentos, url_prefix="/financiamentos")
+    app.register_blueprint(consorcios, url_prefix="/consorcios")
+
     # =========================================================
     # CRIAÇÃO DAS TABELAS
     # =========================================================
@@ -94,3 +104,6 @@ def create_app():
         db.create_all()
 
     return app
+
+
+
