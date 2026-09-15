@@ -1,4 +1,6 @@
-﻿from flask import Flask
+import os
+
+from flask import Flask
 from flask_login import LoginManager
 
 from app.extensions import db
@@ -11,7 +13,41 @@ def create_app():
     app = Flask(__name__)
 
     app.config["SECRET_KEY"] = "sorroche-financas-secret-key"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sorroche_unificado.db"
+
+    # =========================================================
+    # BANCO DE DADOS
+    # =========================================================
+    #
+    # Quando DATABASE_URL existir (ex.: no Render), o sistema
+    # utiliza o PostgreSQL do Neon.
+    #
+    # Quando DATABASE_URL não existir, continua utilizando
+    # o banco SQLite local já existente.
+    #
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url:
+        # Alguns provedores fornecem postgres:// ou postgresql://.
+        # O SQLAlchemy usará o driver psycopg.
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace(
+                "postgres://",
+                "postgresql+psycopg://",
+                1
+            )
+        elif database_url.startswith("postgresql://"):
+            database_url = database_url.replace(
+                "postgresql://",
+                "postgresql+psycopg://",
+                1
+            )
+
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    else:
+        app.config["SQLALCHEMY_DATABASE_URI"] = (
+            "sqlite:///sorroche_unificado.db"
+        )
+
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
@@ -92,6 +128,7 @@ def create_app():
     from app.emprestimos.routes import emprestimos
     from app.financiamentos.routes import financiamentos
     from app.consorcios.routes import consorcios
+
     app.register_blueprint(emprestimos, url_prefix="/emprestimos")
     app.register_blueprint(financiamentos, url_prefix="/financiamentos")
     app.register_blueprint(consorcios, url_prefix="/consorcios")
@@ -104,6 +141,3 @@ def create_app():
         db.create_all()
 
     return app
-
-
-
