@@ -43,6 +43,22 @@ def create_app():
             )
 
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+
+        # =====================================================
+        # CONFIGURAÇÃO DO POOL POSTGRESQL
+        # =====================================================
+        #
+        # Verifica se a conexão ainda está viva antes de
+        # reutilizá-la e recicla conexões antigas.
+        #
+        # Isso evita erros quando o PostgreSQL/Neon encerra
+        # uma conexão SSL que ficou aberta por muito tempo.
+        #
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_pre_ping": True,
+            "pool_recycle": 300,
+        }
+
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = (
             "sqlite:///sorroche_unificado.db"
